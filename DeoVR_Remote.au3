@@ -8,7 +8,7 @@
 #include <json.au3>
 #include "Forms\MainForm.isf"
 #include <WinAPIFiles.au3>
-
+#include "gamepad.au3"
 ; Global initialization
 ; Opt("GUIOnEventMode", 1) ; cannot use event mode because of the loop
 
@@ -18,6 +18,11 @@ OnAutoItExitRegister("OnAutoItExit") ; This doesn't work in event mode.
 ; GUISetOnEvent($GUI_EVENT_CLOSE, "OnAutoItExit")
 
 Global $bConnected = False , $iSocket = 0
+
+; Initialzing the joystick/gamepad
+Global $lpJoy = _JoyInit(), $bHasGamepad
+Global $hTimerLastPressed = TimerInit(), $iInterval = 500 ; Minimum 500ms between presses.
+$bHaveGamepad = ( $lpJoy <> 0)
 
 GUISetState(@SW_SHOW,$MainForm)
 
@@ -30,7 +35,7 @@ GUIRegisterMsg($WM_NOTIFY, "_WM_NOTIFY") ; For list view's double click event.
 $cDummy = GUICtrlCreateDummy() 			; Dummy to accept double click event.
 
 While True
-	
+	Sleep(10)
 	$nMsg = GUIGetMsg()
 	Switch $nMsg
 		Case $GUI_EVENT_CLOSE
@@ -173,6 +178,41 @@ While True
 			ResetData()
 		EndIf
 	EndIf
+	
+	; Gamepad and joystick 0
+	If $bHaveGamepad Then
+		$aJoyData = _GetJoy($lpJoy, 0)
+		If $aJoyData <> 0 Then 
+			; All good.
+			Select 
+				Case UpPressed($aJoyData)
+					If TimerDiff($hTimerLastPressed)> $iInterval Then 
+						PlayPreviousItem()
+						$hTimerLastPressed = TimerInit()
+						cw("up")
+					EndIf
+				Case DownPressed($aJoyData)
+					If TimerDiff($hTimerLastPressed)> $iInterval Then 
+						PlayNextItem()
+						$hTimerLastPressed = TimerInit()
+						cw("down")
+					EndIf
+				Case LeftPressed($aJoyData)
+					If TimerDiff($hTimerLastPressed)> $iInterval Then 
+						JumpBack()
+						$hTimerLastPressed = TimerInit()
+						cw("left")
+					EndIf
+				Case RightPressed($aJoyData)
+					If TimerDiff($hTimerLastPressed)> $iInterval Then 
+						JumpForward()
+						$hTimerLastPressed = TimerInit()
+						cw("right")
+					EndIf
+			EndSelect 
+		EndIf
+	EndIf 
+	
 WEnd
 
 Func _URLDecode($toDecode)
@@ -334,6 +374,7 @@ EndFunc
 
 Func PlayPreviousItem()
 	Local $iCount = _GUICtrlListView_GetItemCount($iList), $iItemToPlay
+	If $iCount = 0 Then Return False ; Nothing in the list.
 	If $iListIndex = -1 Then
 		$iItemToPlay = 0 ; Play first item.
 	ElseIf $iListIndex = 0  Then 
@@ -355,6 +396,7 @@ EndFunc
 
 Func PlayNextItem()
 	Local $iCount = _GUICtrlListView_GetItemCount($iList), $iItemToPlay
+	If $iCount = 0 Then Return False ; Nothing in the list.
 	If $iListIndex = -1 Then
 		$iItemToPlay = 0 ; Play first item.
 	ElseIf $iListIndex + 1 >= $iCount Then 
