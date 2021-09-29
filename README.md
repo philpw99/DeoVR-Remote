@@ -9,5 +9,4 @@
  * First you need to run DeoVR in SteamVR or other platforms, then in DeoVR you need to turn on the "Remote control" in the settings.
  DeoVR only accepts remote connections when in the player mode, which means you need to play some video then pause it.
  * Once DeoVR is ready, you can come back to this program and click on "Connect". Once it's connected, it will show you what file DeoVR is playing, video duration, the position...etc. Now you can use forward and backward buttons. Initial setting is jump 30 seconds, but of course you can change that.
- * This program adds a play list for DeoVR. You can drag a local file to the upper branket, or drag a URL to the lower branket, then add it to the play list. In the future I will try to merge those two together.
-
+ * This program adds a play list for DeoVR. You can drag a local file to the upper branket, or drag a URL to the lower branket, then add it to the play list. The URL should be a direct link, like "https://mywebsite.com/myvideo.mp4", not a stream link.
