@@ -1,7 +1,6 @@
 # DeoVR Remote
-![Remote](https://user-images.githubusercontent.com/22040708/135333303-e5bf86c4-dd6e-418e-842b-1a91bbb07954.png)
+<img src="https://user-images.githubusercontent.com/22040708/135333458-6a100085-c826-4c31-99b0-ba785701bf22.png" width='500' align="middle" />
  This is a Windows based DeoVR remote control program, written in AutoIt3. 
- 
  GUI is designed by ISN AutoIt Studio. You guys rocks!
  
  DeoVR player offers simple remote control function at port 23554, and this remote program utilize it to add features like playlist, jumping forward and back...
