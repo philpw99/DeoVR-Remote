@@ -3,6 +3,7 @@
 ;Created with ISN AutoIt Studio v. 1.13
 ;*****************************************
 #AutoIt3Wrapper_Res_HiDpi=Y
+Opt("WinTitleMatchMode", 3) ; Exact title match mode.
 
 ; #include <ColorConstants.au3>
 #include <json.au3>
@@ -171,7 +172,12 @@ While True
 				; Not playing a file any more.
 				ResetData()
 			EndIf
-		EndIf 
+		EndIf ; ==> Do things every second
+		; Check to see if Deo VR still running.
+		$hDeoVR = WinGetHandle("Deo VR", "")
+		If @error Then
+			Disconnect()
+		EndIf
 	Else
 		; Disconnected. Reset all data.
 		If GUICtrlRead($filePlaying) <> "" Then 
@@ -208,6 +214,12 @@ While True
 						JumpForward()
 						$hTimerLastPressed = TimerInit()
 						cw("right")
+					EndIf
+				Case BPressed($aJoyData)
+					If TimerDiff($hTimerLastPressed)> $iInterval Then 
+						PauseToggle()
+						$hTimerLastPressed = TimerInit()
+						cw("(B)")
 					EndIf
 			EndSelect 
 		EndIf
@@ -325,6 +337,8 @@ Func SaveList()
 EndFunc
 
 Func PauseToggle()
+	If Not $bConnected Then return 1
+	
 	Local $sState = GUICtrlRead($playerState)
 	If $sState = "Playing" Then
 		; Pause it
@@ -332,16 +346,23 @@ Func PauseToggle()
 		; Set play icon.
 		; GUICtrlSetImage($btnPause,@scriptdir&"\"&"Images\Forward.ico")
 		GUICtrlSetData($btnPause, "Play")
+		If $iListIndex <> -1 Then 
+			_GUICtrlListView_SetItemText ($iList, $iListIndex, "Paused", 1)
+		EndIf
 	ElseIf $sState = "Paused" Then
 		; Play it
 		SendCommand('{"playerState":0}')
 		; GUICtrlSetImage($btnPause,@scriptdir&"\"&"Images\pause.ico")
 		GUICtrlSetData($btnPause, "Pause")
+		If $iListIndex <> -1 Then 
+			_GUICtrlListView_SetItemText ($iList, $iListIndex, "Playing", 1)
+		EndIf
 	EndIf
+	
 EndFunc
 
 Func SendCommand($sCommand)
-	If $iSocket = 0 or not $bConnected Then Return
+	If $iSocket = 0 or not $bConnected Then Return 1
 	
 	Local $iLength = Int(BinaryLen($sCommand), 1) ; Making sure it's 4 bytes int.
 	Local $sSend = BinaryToString(Binary($iLength) & Binary($sCommand))
@@ -366,10 +387,15 @@ Func PlayCurrentItem()
 	$iListIndex = _GUICtrlListView_GetHotItem ($iList)
 
 	If $iListIndex = -1 Then Return
-
-	Local $sText = _GUICtrlListView_GetItemText($iList, $iListIndex) ; Get current item's text
-	Play($sText)
-	_GUICtrlListView_SetItemText ($iList, $iListIndex, "Playing", 1)
+	
+	If $bConnected Then
+		Local $sText = _GUICtrlListView_GetItemText($iList, $iListIndex) ; Get current item's text
+		Play($sText)
+		_GUICtrlListView_SetItemText ($iList, $iListIndex, "Playing", 1)
+	Else 
+		; Not connected, but can be selected as the active item.
+		_GUICtrlListView_SetItemText ($iList, $iListIndex, "Active", 1)
+	EndIf 
 EndFunc
 
 Func PlayPreviousItem()
@@ -454,7 +480,10 @@ Func ResetData()
 		GUICtrlSetData($videoPosition, "" )
 		GUICtrlSetData($playingSpeed, "" )
 		GUICtrlSetData($playProgress, 0 )
-	EndIf 
+	EndIf
+	If $iListIndex <> -1 Then 
+		_GUICtrlListView_SetItemText ($iList, $iListIndex, "Active", 1)
+	EndIf
 EndFunc
 
 Func AddFile2Queue()
@@ -483,6 +512,7 @@ Func Disconnect()
 	$bConnected = False
 	GUICtrlSetData($btnConnect, "Disconnect")
 	GUICtrlSetData($connectStatus, "Connection lost.")
+	ResetData()
 EndFunc
 
 Func Play($str)

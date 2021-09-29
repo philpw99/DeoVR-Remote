@@ -68,6 +68,11 @@ Func RightPressed(ByRef $coor)
 	return $coor[0] > $iStickHigh
 EndFunc
 
+Func BPressed(ByRef $coor)
+	If UBound($coor) <> 8 Then return False ; Not the right data
+	return BitAND($coor[7], 2)
+EndFunc
+
 Func GetPressed($Val) ; The $coor[7] from _GetJoy()
     $SButtons = ''
     If BitAND($Val, 1) Then $SButtons &= '(A)'
