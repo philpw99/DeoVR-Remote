@@ -30,10 +30,10 @@ GUISetState(@SW_SHOW,$MainForm)
 Local $iSecond =  @SEC, $hTimer = TimerInit(), $hLastPlayTimer = TimerInit()
 Local $iCount =  0, $bHaveData = False
 
-Global $iLength, $iPosition, $bPlayFromStart = False ; Current video length and position
-Global $iListIndex = -1
+Global $sFilePlaying, $iLength, $iPosition, $iPlayerState = -1, $iPlayingSpeed ; Current playback info
+
+Global $iListIndex = -1, $bPlayFromStart = False
 GUIRegisterMsg($WM_NOTIFY, "_WM_NOTIFY") ; For list view's double click event.
-$cDummy = GUICtrlCreateDummy() 			; Dummy to accept double click event.
 
 While True
 	Sleep(10)
@@ -61,8 +61,6 @@ While True
 			DeleteItem()
 		Case $chkPlayFromBeginning
 			SetPlayFromStart()
-		Case $cDummy	; Double click event
-			PlayCurrentItem()
 		Case $playNext
 			PlayNextItem()
 		Case $playPrevious
@@ -88,41 +86,50 @@ While True
 	
 	If $bConnected Then 
 		; Get message from DeoVR
-		Local $iTimePass = TimerDiff($hTimer), $iSize
-		
-		If $iTimePass > 100 Then ; Check it every 100 ms.
-			Local $iSize = TCPRecv($iSocket, 4, 1) , $sData = ""
-			If $iSize <> 0 Then ; Got some data to receive.
-				$bHaveData = True
-				$sData =  TCPRecv($iSocket, $iSize)
-				; ConsoleWrite($sData & @CRLF)
-				If $sData Then 
-					Local $oResult = Json_Decode($sData) ; Turn the json data into object
-					If @error =  -2 Then 
-						; No longer connected.
-						Disconnect()
+		Local $iSize = TCPRecv($iSocket, 4, 1) , $sData = "", $sText = ""
+		If $iSize <> 0 Then ; Got some data to receive.
+			$bHaveData = True
+			$sData =  TCPRecv($iSocket, $iSize)
+			; ConsoleWrite($sData & @CRLF)
+			If $sData Then
+				Local $oResult = Json_Decode($sData) ; Turn the json data into object
+				If @error =  -2 Then 
+					; No longer connected.
+					Disconnect()
+				EndIf
+				If Json_IsObject($oResult) Then
+					If $sFilePlaying <> $oResult.Item("path") Then 
+						; Playing file is different.
+						$sFilePlaying = $oResult.Item("path")
+						GUICtrlSetData($filePlaying, $sFilePlaying ); Display file path and name
 					EndIf
-					If Json_IsObject($oResult) Then 
-						GUICtrlSetData($filePlaying, $oResult.Item("path" ) ); Display file path and name
-						If $oResult.Item("playerState") = "0" Then
+					if $iPlayerState <> $oResult.Item("playerState") _ 
+							Or GUICtrlRead($playerState) = "" Then
+						$iPlayerState =  $oResult.Item("playerState")
+						If $iPlayerState = 0 Then
 							GUICtrlSetData($playerState, "Playing" )
-						ElseIf $oResult.Item("playerState") = "1" Then 
+						Else 
 							GUICtrlSetData($playerState, "Paused" )
 						EndIf
-						; Done, now reset the variable
-						$sData = ""
-						; Below updates statis.
+					EndIf
+					; Done, now reset the variable
+					$sData = ""
+					; Below updates statis if not the same.
+					if $iLength <> Floor(Int($oResult.Item("duration"))) Then 
 						$iLength = Floor(Int($oResult.Item("duration")))
-						$iPosition = Floor(Int($oResult.Item("currentTime")))
 						GUICtrlSetData($videoLength, TimeConvert($iLength) ) ; Display the video length
+					EndIf
+					If $iPosition <> Floor(Int($oResult.Item("currentTime"))) Then 
+						$iPosition = Floor(Int($oResult.Item("currentTime")))
 						GUICtrlSetData($videoPosition, TimeConvert($iPosition) )
-						GUICtrlSetData($playingSpeed, $oResult.Item("playbackSpeed") )
 						GUICtrlSetData($playProgress, Floor($iPosition / $iLength * 100) )
-					EndIf 
-				EndIf
+					EndIf
+					If $iPlayingSpeed <> $oResult.Item("playbackSpeed") Then 
+						$iPlayingSpeed = $oResult.Item("playbackSpeed")
+						GUICtrlSetData($playingSpeed, $oResult.Item("playbackSpeed") )						
+					EndIf
+				EndIf 
 			EndIf
-			; Timer reset.
-			$hTimer = TimerInit()
 		EndIf
 		
 		If $iSecond <> @SEC Then
@@ -179,10 +186,22 @@ While True
 			Disconnect()
 		EndIf
 	Else
-		; Disconnected. Reset all data.
-		If GUICtrlRead($filePlaying) <> "" Then 
-			ResetData()
-		EndIf
+		; Do things every second while disconnetec.
+		If $iSecond <> @SEC Then
+			$iSecond =  @SEC
+			; Disconnected. Reset all data.
+			If GUICtrlRead($filePlaying) <> "" Then 
+				ResetData()
+			EndIf
+			Local $ip =  GUICtrlRead($hostInput),  $port =  GUICtrlRead($portInput)
+			$iSocket = TCPConnect($ip, $port)
+			If @error Then
+				GUICtrlSetData($connectStatus, "DeoVR is not ready.")
+			Else 
+				TCPCloseSocket($iSocket)
+				GUICtrlSetData($connectStatus, "DeoVR is ready to connect.")
+			EndIf
+		EndIf 
 	EndIf
 	
 	; Gamepad and joystick 0
@@ -203,18 +222,19 @@ While True
 						$hTimerLastPressed = TimerInit()
 						cw("down")
 					EndIf
-				Case LeftPressed($aJoyData)
-					If TimerDiff($hTimerLastPressed)> $iInterval Then 
-						JumpBack()
-						$hTimerLastPressed = TimerInit()
-						cw("left")
-					EndIf
-				Case RightPressed($aJoyData)
-					If TimerDiff($hTimerLastPressed)> $iInterval Then 
-						JumpForward()
-						$hTimerLastPressed = TimerInit()
-						cw("right")
-					EndIf
+				;;; Below is quoted out because DeoVR handles left and right button as well.
+				; Case LeftPressed($aJoyData)
+				;	If TimerDiff($hTimerLastPressed)> $iInterval Then 
+				;		JumpBack()
+				;		$hTimerLastPressed = TimerInit()
+				;		cw("left")
+				;	EndIf
+				; Case RightPressed($aJoyData)
+				;	If TimerDiff($hTimerLastPressed)> $iInterval Then 
+				;		JumpForward()
+				;		$hTimerLastPressed = TimerInit()
+				;		cw("right")
+				;	EndIf
 				Case BPressed($aJoyData)
 					If TimerDiff($hTimerLastPressed)> $iInterval Then 
 						PauseToggle()
@@ -340,25 +360,33 @@ Func PauseToggle()
 	If Not $bConnected Then return 1
 	
 	Local $sState = GUICtrlRead($playerState)
-	If $sState = "Playing" Then
+	If $iPlayerState = 0 Then
 		; Pause it
 		SendCommand('{"playerState":1}')
-		; Set play icon.
-		; GUICtrlSetImage($btnPause,@scriptdir&"\"&"Images\Forward.ico")
-		GUICtrlSetData($btnPause, "Play")
-		If $iListIndex <> -1 Then 
-			_GUICtrlListView_SetItemText ($iList, $iListIndex, "Paused", 1)
-		EndIf
-	ElseIf $sState = "Paused" Then
+		$iPlayerState = 1
+		GUICtrlSetData($playerState, "Paused")
+	Else
 		; Play it
 		SendCommand('{"playerState":0}')
-		; GUICtrlSetImage($btnPause,@scriptdir&"\"&"Images\pause.ico")
-		GUICtrlSetData($btnPause, "Pause")
+		$iPlayerState = 0
+		GUICtrlSetData($playerState, "Playing")
 		If $iListIndex <> -1 Then 
 			_GUICtrlListView_SetItemText ($iList, $iListIndex, "Playing", 1)
 		EndIf
 	EndIf
-	
+	; Handle the play list
+	If $iListIndex <> -1 And _ 
+		$sFilePlaying = _GUICtrlListView_GetItemText($iList, $iListIndex) Then 
+		; Only set text if the file playing is the play list's current item.
+		If $iPlayerState Then 
+			; Paused
+			_GUICtrlListView_SetItemText ($iList, $iListIndex, "Paused", 1)			
+		Else 
+			; Playing
+			_GUICtrlListView_SetItemText ($iList, $iListIndex, "Playing", 1)			
+		EndIf
+	EndIf
+
 EndFunc
 
 Func SendCommand($sCommand)
@@ -374,20 +402,15 @@ Func SendCommand($sCommand)
 	EndIf
 EndFunc
 
-Func PlayCurrentItem()
-	; Set the previous playing item to nothing
-	
-	; If $iListIndex = -1 then no previous item is playing
+Func PlayItem($iIndex)
 	
 	If $iListIndex <> -1 Then 
 		; Set previous playing to nothing
 		_GUICtrlListView_SetItemText($iList, $iListIndex, "", 1)
 	EndIf
 	; Set the current index number
-	$iListIndex = _GUICtrlListView_GetHotItem ($iList)
+	$iListIndex = $iIndex
 
-	If $iListIndex = -1 Then Return
-	
 	If $bConnected Then
 		Local $sText = _GUICtrlListView_GetItemText($iList, $iListIndex) ; Get current item's text
 		Play($sText)
@@ -445,7 +468,7 @@ EndFunc
 Func _WM_NOTIFY($hWnd, $iMsg, $wParam, $lParam)
 	#forceref $hWnd, $iMsg, $wParam
 	; This one handles list view's double click event.
-	Local $hWndFrom, $iIDFrom, $iCode, $tNMHDR, $hWndListView, $tInfo
+	Local $hWndFrom, $iIDFrom, $iCode, $tNMHDR, $hWndListView, $tInfo, $iIndex
     $hWndListView = $iList
     If Not IsHWnd($iList) Then $hWndListView = GUICtrlGetHandle($iList)
 
@@ -457,10 +480,13 @@ Func _WM_NOTIFY($hWnd, $iMsg, $wParam, $lParam)
 		Case $hWndListView
 			Switch $iCode
 				Case $NM_DBLCLK
-					GUICtrlSendToDummy($cDummy)
+					$tInfo = DllStructCreate($tagNMITEMACTIVATE, $lParam)
+					$iIndex = DllStructGetData($tInfo, "Index")
+					cw("Double clicked on index:" & $iIndex)
+					PlayItem($iIndex)
 			EndSwitch
     EndSwitch
-    Return $GUI_RUNDEFMSG
+    ; Return $GUI_RUNDEFMSG
 EndFunc
 
 Func SetPlayFromStart()
@@ -475,10 +501,15 @@ EndFunc
 Func ResetData()
 	If GUICtrlRead($filePlaying) <> "" Then 
 		GUICtrlSetData($filePlaying, "" )
+		$sFilePlaying = ""
 		GUICtrlSetData($playerState, "" )
+		$iPlayerState = -1
 		GUICtrlSetData($videoLength, "" )
+		$iLength = 0
 		GUICtrlSetData($videoPosition, "" )
+		$iPosition = 0
 		GUICtrlSetData($playingSpeed, "" )
+		$iPlayingSpeed = 0
 		GUICtrlSetData($playProgress, 0 )
 	EndIf
 	If $iListIndex <> -1 Then 
@@ -512,6 +543,7 @@ Func Disconnect()
 	$bConnected = False
 	GUICtrlSetData($btnConnect, "Disconnect")
 	GUICtrlSetData($connectStatus, "Connection lost.")
+	GUICtrlSetData($btnConnect, "Connect")
 	ResetData()
 EndFunc
 
@@ -555,8 +587,8 @@ Func Connect()
 	; this one connects to the host
 	; ConsoleWrite("here" & @CRLF)
 	; Currently connect or disconnect?
-	Local $state =  GUICtrlRead($btnConnect)
-	If $state =  "Connect" Then 
+
+	If Not $bConnected Then 
 		; Connect
 		Local $ip =  GUICtrlRead($hostInput),  $port =  GUICtrlRead($portInput)
 		$iSocket = TCPConnect($ip, $port)
@@ -571,7 +603,7 @@ Func Connect()
 		GUICtrlSetData($connectStatus, "Connected.")
 		$bConnected =  True
 		GUICtrlSetData($btnConnect, "Disconnect")
-	Elseif $state =  "Disconnect" Then
+	Else
 		; Disconnect
 		TCPCloseSocket($iSocket)
 		$bConnected =  False 
