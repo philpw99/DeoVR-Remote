@@ -19,6 +19,7 @@ OnAutoItExitRegister("OnAutoItExit") ; This doesn't work in event mode.
 ; GUISetOnEvent($GUI_EVENT_CLOSE, "OnAutoItExit")
 
 Global $bConnected = False , $iSocket = 0
+Global $hTimer = TimerInit(), $iCheckDataInterval = 300  ;  Check the data every 300 ms
 
 ; Initialzing the joystick/gamepad
 Global $lpJoy = _JoyInit(), $bHasGamepad
@@ -86,52 +87,53 @@ While True
 	
 	If $bConnected Then 
 		; Get message from DeoVR
-		Local $iSize = TCPRecv($iSocket, 4, 1) , $sData = "", $sText = ""
-		If $iSize <> 0 Then ; Got some data to receive.
-			$bHaveData = True
-			$sData =  TCPRecv($iSocket, $iSize)
-			; ConsoleWrite($sData & @CRLF)
-			If $sData Then
-				Local $oResult = Json_Decode($sData) ; Turn the json data into object
-				If @error =  -2 Then 
-					; No longer connected.
-					Disconnect()
-				EndIf
-				If Json_IsObject($oResult) Then
-					If $sFilePlaying <> $oResult.Item("path") Then 
-						; Playing file is different.
-						$sFilePlaying = $oResult.Item("path")
-						GUICtrlSetData($filePlaying, $sFilePlaying ); Display file path and name
+		If TimerDiff($hTimer) > $iCheckDataInterval Then 
+			Local $iSize = TCPRecv($iSocket, 4, 1) , $sData = "", $sText = ""
+			If $iSize <> 0 Then ; Got some data to receive.
+				$bHaveData = True
+				$sData =  TCPRecv($iSocket, $iSize)
+				; ConsoleWrite($sData & @CRLF)
+				If $sData Then
+					Local $oResult = Json_Decode($sData) ; Turn the json data into object
+					If @error =  -2 Then 
+						; No longer connected.
+						Disconnect()
 					EndIf
-					if $iPlayerState <> $oResult.Item("playerState") _ 
-							Or GUICtrlRead($playerState) = "" Then
-						$iPlayerState =  $oResult.Item("playerState")
-						If $iPlayerState = 0 Then
-							GUICtrlSetData($playerState, "Playing" )
-						Else 
-							GUICtrlSetData($playerState, "Paused" )
+					If Json_IsObject($oResult) Then
+						If $sFilePlaying <> $oResult.Item("path") Then 
+							; Playing file is different.
+							$sFilePlaying = $oResult.Item("path")
+							GUICtrlSetData($filePlaying, $sFilePlaying ); Display file path and name
 						EndIf
-					EndIf
-					; Done, now reset the variable
-					$sData = ""
-					; Below updates statis if not the same.
-					if $iLength <> Floor(Int($oResult.Item("duration"))) Then 
-						$iLength = Floor(Int($oResult.Item("duration")))
-						GUICtrlSetData($videoLength, TimeConvert($iLength) ) ; Display the video length
-					EndIf
-					If $iPosition <> Floor(Int($oResult.Item("currentTime"))) Then 
-						$iPosition = Floor(Int($oResult.Item("currentTime")))
-						GUICtrlSetData($videoPosition, TimeConvert($iPosition) )
-						GUICtrlSetData($playProgress, Floor($iPosition / $iLength * 100) )
-					EndIf
-					If $iPlayingSpeed <> $oResult.Item("playbackSpeed") Then 
-						$iPlayingSpeed = $oResult.Item("playbackSpeed")
-						GUICtrlSetData($playingSpeed, $oResult.Item("playbackSpeed") )						
-					EndIf
-				EndIf 
+						if $iPlayerState <> $oResult.Item("playerState") _ 
+								Or GUICtrlRead($playerState) = "" Then
+							$iPlayerState =  $oResult.Item("playerState")
+							If $iPlayerState = 0 Then
+								GUICtrlSetData($playerState, "Playing" )
+							Else 
+								GUICtrlSetData($playerState, "Paused" )
+							EndIf
+						EndIf
+						; Done, now reset the variable
+						$sData = ""
+						; Below updates statis if not the same.
+						if $iLength <> Floor(Int($oResult.Item("duration"))) Then 
+							$iLength = Floor(Int($oResult.Item("duration")))
+							GUICtrlSetData($videoLength, TimeConvert($iLength) ) ; Display the video length
+						EndIf
+						If $iPosition <> Floor(Int($oResult.Item("currentTime"))) Then 
+							$iPosition = Floor(Int($oResult.Item("currentTime")))
+							GUICtrlSetData($videoPosition, TimeConvert($iPosition) )
+							GUICtrlSetData($playProgress, Floor($iPosition / $iLength * 100) )
+						EndIf
+						If $iPlayingSpeed <> $oResult.Item("playbackSpeed") Then 
+							$iPlayingSpeed = $oResult.Item("playbackSpeed")
+							GUICtrlSetData($playingSpeed, $oResult.Item("playbackSpeed") )						
+						EndIf
+					EndIf 
+				EndIf
 			EndIf
-		EndIf
-		
+		EndIf ; ==> End of checking data
 		If $iSecond <> @SEC Then
 			; Do this every second.
 			$sent =  TCPSend($iSocket, 0 ) ; Keep alive.
