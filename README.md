@@ -1,5 +1,6 @@
 # DeoVR Remote
-<img src="https://user-images.githubusercontent.com/22040708/135333458-6a100085-c826-4c31-99b0-ba785701bf22.png" width='500' align="middle" />
+<img src="https://user-images.githubusercontent.com/22040708/136134388-b61da115-34f5-4c2a-8cd1-19ddaa585819.png" width='500' align="middle" />
+
  This is a Windows based DeoVR remote control program, written in AutoIt3. 
  GUI is designed by ISN AutoIt Studio. You guys rocks!
  
