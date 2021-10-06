@@ -7,9 +7,12 @@ Opt("WinTitleMatchMode", 3) ; Exact title match mode.
 
 ; #include <ColorConstants.au3>
 #include <json.au3>
+#include <Array.au3>
+#include <GuiSlider.au3>
 #include "Forms\MainForm.isf"
 #include <WinAPIFiles.au3>
 #include "gamepad.au3"
+
 ; Global initialization
 ; Opt("GUIOnEventMode", 1) ; cannot use event mode because of the loop
 
@@ -32,9 +35,12 @@ Local $iSecond =  @SEC, $hTimer = TimerInit(), $hLastPlayTimer = TimerInit()
 Local $iCount =  0, $bHaveData = False
 
 Global $sFilePlaying, $iLength, $iPosition, $iPlayerState = -1, $iPlayingSpeed ; Current playback info
-
+Global $gaDropFiles[1]
 Global $iListIndex = -1, $bPlayFromStart = False
+
+Global $iPosA = 0, $iPosB = 0, $iGoPosition = 0
 GUIRegisterMsg($WM_NOTIFY, "_WM_NOTIFY") ; For list view's double click event.
+GUIRegisterMsg ($WM_DROPFILES, "_WM_DROPFILES") ; For dropping files on the list.
 
 While True
 	Sleep(10)
@@ -44,20 +50,24 @@ While True
 			Exit
 		Case $btnConnect
 			Connect()
-		Case $playFile
-			PlayLocalFile()
 		Case $playLink
 			PlayLink()
 		Case $GUI_EVENT_DROPPED
-			; ConsoleWrite("DropID:" & @GUI_DropId & " fileLink:" & $fileLinkInput & " Drop file:" & @GUI_DragFile & @CRLF)
+			; cw("DropID:" & @GUI_DropId & " Drop file:" & @GUI_DragFile)
+			; _ArrayDisplay($gaDropFiles)
+			If $gaDropFiles[0] <> "" Then 
+				For $i = 0 To UBound($gaDropFiles) - 1
+					AddFile2Queue($gaDropFiles[$i])
+				Next
+				ReDim $gaDropFiles[1]
+				$gaDropFiles[0] = "" ; Done, clear the list
+			EndIf 
 		Case $jumpBack
 			JumpBack()
 		Case $jumpForward
 			JumpForward()
-		Case $addFileToQueue
-			AddFile2Queue()
 		Case $addLinkToQueue
-			AddLink2Queue()
+			AddLink2Queue( StringStripWS( _GUICtrlRichEdit_GetText($linkInput), 1 + 2) )
 		Case $btnDelete
 			DeleteItem()
 		Case $chkPlayFromBeginning
@@ -72,6 +82,14 @@ While True
 			SaveList()
 		Case $btnLoadList
 			LoadList()
+		Case $playSlider
+			SliderSetTime()
+		Case $LoopA
+			SetLoopA()
+		Case $LoopB
+			SetLoopB()
+		Case $LoopClear
+			LoopClear()
 	EndSwitch
 
 	; Make rich edit only accepts text and link.
@@ -86,8 +104,7 @@ While True
 	EndIf
 	
 	If $bConnected Then 
-		; Get message from DeoVR
-		If TimerDiff($hTimer) > $iCheckDataInterval Then 
+		If TimerDiff($hTimer) > $iCheckDataInterval Then  ; Check DeoVR message every 300 ms.
 			Local $iSize = TCPRecv($iSocket, 4, 1) , $sData = "", $sText = ""
 			If $iSize <> 0 Then ; Got some data to receive.
 				$bHaveData = True
@@ -120,11 +137,38 @@ While True
 						if $iLength <> Floor(Int($oResult.Item("duration"))) Then 
 							$iLength = Floor(Int($oResult.Item("duration")))
 							GUICtrlSetData($videoLength, TimeConvert($iLength) ) ; Display the video length
+							; Update the slide bar
+							_GUICtrlSlider_SetRange($playSlider, 0, $iLength)
+							If $iLength > 3600 Then  ; Longer than 1 hour, 5 minutes
+								_GUICtrlSlider_SetTicFreq($playSlider, 300)
+								_GUICtrlSlider_SetPageSize($playSlider, 300)
+							ElseIf $iLength > 600 Then 	; Longer than 10 minutes, 1 minutes
+								_GUICtrlSlider_SetTicFreq($playSlider, 60)
+								_GUICtrlSlider_SetPageSize($playSlider, 60)
+								; cw("page size:" & _GUICtrlSlider_GetPageSize($playSlider))
+							Else 
+								_GUICtrlSlider_SetTicFreq($playSlider, 15)  ; 15 seconds
+								_GUICtrlSlider_SetPageSize($playSlider, 15)
+							EndIf 
 						EndIf
-						If $iPosition <> Floor(Int($oResult.Item("currentTime"))) Then 
+						If $iPosition <> Floor(Int($oResult.Item("currentTime"))) Then
 							$iPosition = Floor(Int($oResult.Item("currentTime")))
 							GUICtrlSetData($videoPosition, TimeConvert($iPosition) )
-							GUICtrlSetData($playProgress, Floor($iPosition / $iLength * 100) )
+							; Update the slide bar
+							_GUICtrlSlider_SetPos($playSlider, $iPosition)
+							If $iGoPosition = 0 Then
+								If $iPosB <> 0 Then ; Has looping selection
+									If $iPosition >= $iPosB Then
+										; Do the looping.
+										GoPosition($iPosA)
+									EndIf
+								EndIf 
+							Else 
+								;Jumping to a new position. Not updating.
+								If Abs($iGoPosition - $iPosition) < 3 Then ; within 3 seconds of margin.
+									$iGoPosition = 0
+								EndIf
+							EndIf 
 						EndIf
 						If $iPlayingSpeed <> $oResult.Item("playbackSpeed") Then 
 							$iPlayingSpeed = $oResult.Item("playbackSpeed")
@@ -134,8 +178,7 @@ While True
 				EndIf
 			EndIf
 		EndIf ; ==> End of checking data
-		If $iSecond <> @SEC Then
-			; Do this every second.
+		If $iSecond <> @SEC Then  ; Do this every second.
 			$sent =  TCPSend($iSocket, 0 ) ; Keep alive.
 			
 			; Below is to set the control button if playState change.
@@ -187,7 +230,7 @@ While True
 		If @error Then
 			Disconnect()
 		EndIf
-	Else
+	Else ; ==> If not connected.
 		; Do things every second while disconnetec.
 		If $iSecond <> @SEC Then
 			$iSecond =  @SEC
@@ -249,6 +292,38 @@ While True
 	
 WEnd
 
+Func LoopClear()
+	_GUICtrlSlider_ClearSel($playSlider)
+	$iPosA = 0
+	$iPosB = 0
+EndFunc
+
+Func SetLoopA()
+	$iPosA = _GUICtrlSlider_GetPos($playSlider)
+	If $iPosB = 0 Or $iPosB < $iPosA Then $iPosB = $iLength
+	_GUICtrlSlider_SetSel($playSlider, $iPosA, $iPosB)
+EndFunc
+
+Func SetLoopB()
+	$iPosB = _GUICtrlSlider_GetPos($playSlider)
+	If $iPosA > $iPosB Then $iPosA = 0
+	_GUICtrlSlider_SetSel($playSlider, $iPosA, $iPosB)
+EndFunc
+
+
+Func SliderSetTime()
+	If $iLength = 0 Then 
+		_GUICtrlSlider_SetPos($playSlider, 0)
+		Return 
+	EndIf
+	If Not $bConnected Then Return
+	Local $iNewPos = _GUICtrlSlider_GetPos($playSlider)
+
+	If $iNewPos <> $iPosition Then GoPosition($iNewPos)
+	; $iPosition = $iNewPos ; Prevent it from being called again.
+EndFunc
+
+; Handling encoded URL like %20...etc
 Func _URLDecode($toDecode)
  local $strChar = "", $iOne, $iTwo
  Local $aryHex = StringSplit($toDecode, "")
@@ -266,6 +341,7 @@ Func _URLDecode($toDecode)
  Return StringReplace($strChar, "+", " ")
 EndFunc
 
+; Converts seconds to HH:MM:SS
 Func TimeConvert($i)
 	Local $iHour =  Floor($i / 3600) 
 	Local $iMin = Floor( ($i - 3600 * $iHour) / 60)
@@ -273,6 +349,7 @@ Func TimeConvert($i)
 	Return StringFormat('%02d:%02d:%02d', $iHour, $iMin, $iSec)
 EndFunc
 
+; Load the saved m3u to the play list.
 Func LoadList()
 	Local $sFileOpenDialog = FileOpenDialog("Open the m3u list file:", @DocumentsCommonDir, _ 
 		"M3U Play List File (*.m3u)", 3 )
@@ -312,6 +389,7 @@ Func LoadList()
 	$iListIndex = -1
 EndFunc
 
+; Save the list as m3u file
 Func SaveList()
 	; Save the play list to a m3u file.
 	Local $sFileSaveDialog = FileSaveDialog("Save the m3u list file as:", @DocumentsCommonDir, _ 
@@ -391,6 +469,7 @@ Func PauseToggle()
 
 EndFunc
 
+; Send a text command to DeoVR player
 Func SendCommand($sCommand)
 	If $iSocket = 0 or not $bConnected Then Return 1
 	
@@ -404,6 +483,7 @@ Func SendCommand($sCommand)
 	EndIf
 EndFunc
 
+; Play an item in the list
 Func PlayItem($iIndex)
 	
 	If $iListIndex <> -1 Then 
@@ -423,6 +503,7 @@ Func PlayItem($iIndex)
 	EndIf 
 EndFunc
 
+; Play the previous item in the list
 Func PlayPreviousItem()
 	Local $iCount = _GUICtrlListView_GetItemCount($iList), $iItemToPlay
 	If $iCount = 0 Then Return False ; Nothing in the list.
@@ -445,6 +526,7 @@ Func PlayPreviousItem()
 	Play($sNewText)
 EndFunc
 
+; Play the next item in the list
 Func PlayNextItem()
 	Local $iCount = _GUICtrlListView_GetItemCount($iList), $iItemToPlay
 	If $iCount = 0 Then Return False ; Nothing in the list.
@@ -467,7 +549,26 @@ Func PlayNextItem()
 	Play($sNewText)
 EndFunc
 
-Func _WM_NOTIFY($hWnd, $iMsg, $wParam, $lParam)
+Func _WM_DROPFILES($hWnd, $msgID, $wParam, $lParam) ; Special handling of dropping files
+	#forceref $hWnd, $lParam
+	Switch $msgID
+		Case $WM_DROPFILES
+			Local $nSize, $pFileName
+			Local $nAmt = DllCall("shell32.dll", "int", "DragQueryFileW", "hwnd", $wParam, "int", 0xFFFFFFFF, "ptr", 0, "int", 255)
+			For $i = 0 To $nAmt[0] - 1
+				$nSize = DllCall("shell32.dll", "int", "DragQueryFileW", "hwnd", $wParam, "int", $i, "ptr", 0, "int", 0) 
+				$nSize = $nSize[0] + 1
+				$pFileName = DllStructCreate("wchar[" & $nSize & "]")
+				DllCall("shell32.dll", "int", "DragQueryFileW", "hwnd", $wParam, "int", $i, "ptr", DllStructGetPtr($pFileName), "int", $nSize)
+				ReDim $gaDropFiles[$i+1]
+				$gaDropFiles[$i] = DllStructGetData($pFileName, 1)
+				$pFileName = 0
+			Next
+	EndSwitch
+	Return $GUI_RUNDEFMSG ; Let AutoIt handle it from here.
+EndFunc
+
+Func _WM_NOTIFY($hWnd, $iMsg, $wParam, $lParam) ; Special handling of double click
 	#forceref $hWnd, $iMsg, $wParam
 	; This one handles list view's double click event.
 	Local $hWndFrom, $iIDFrom, $iCode, $tNMHDR, $hWndListView, $tInfo, $iIndex
@@ -488,7 +589,7 @@ Func _WM_NOTIFY($hWnd, $iMsg, $wParam, $lParam)
 					PlayItem($iIndex)
 			EndSwitch
     EndSwitch
-    ; Return $GUI_RUNDEFMSG
+    Return $GUI_RUNDEFMSG	; Let Autoit handle it from here.
 EndFunc
 
 Func SetPlayFromStart()
@@ -512,27 +613,33 @@ Func ResetData()
 		$iPosition = 0
 		GUICtrlSetData($playingSpeed, "" )
 		$iPlayingSpeed = 0
-		GUICtrlSetData($playProgress, 0 )
+		_GUICtrlSlider_SetPos($playSlider, 0)
+		; GUICtrlSetData($playProgress, 0 )
+		If $iPosA Or $iPosB Then 
+			$iPosA = 0
+			$iPosB = 0
+			_GUICtrlSlider_ClearSel($playSlider)
+		EndIf 
 	EndIf
 	If $iListIndex <> -1 Then 
 		_GUICtrlListView_SetItemText ($iList, $iListIndex, "Active", 1)
 	EndIf
 EndFunc
 
-Func AddFile2Queue()
+Func AddFile2Queue($sFile)
 	; cw("here")
-	Local $sFile =  StringStripWS( GUICtrlRead($fileLinkInput), 1 + 2 )
 	If Not FileExists($sFile) Then
 		Local $reply = MsgBox($MB_OK + $MB_ICONWARNING, "File not exist.", _
 			"This file does not exist, are you sure to add it to the list?")
 		If $reply = $IDCANCEL Then Return
+	ElseIf StringInStr(FileGetAttrib($sFile), "D") Then 
+		; It's a directory, ignore.
+		Return
 	EndIf
 	GUICtrlCreateListViewItem($sFile & "|", $iList)
-	GUICtrlSetData($fileLinkInput, "")
 EndFunc
 
-Func AddLink2Queue()
-	Local $sLink = StringStripWS( _GUICtrlRichEdit_GetText($linkInput), 1 + 2) ; strip leading and trailing white spaces.
+Func AddLink2Queue($sLink)
 	If $sLink <> "" Then
 		GUICtrlCreateListViewItem($sLink & "|", $iList)
 	EndIf
@@ -566,17 +673,6 @@ Func Play($str)
 		EndIf 
 		SendCommand($sCommand)
 	EndIf 
-EndFunc
-
-Func PlayLocalFile()
-	Local $sFile =  GUICtrlRead($fileLinkInput)
-	If Not FileExists($sFile) Then
-		Local $reply = MsgBox($MB_OKCANCEL + $MB_ICONWARNING, "File not exist.", _ 
-			"This file doesn't exist, still want to play it anyway?")
-		If $reply = $IDCANCEL Then Return
-	EndIf
-	Play(StringReplace($sFile, "\", "/"))
-	GUICtrlSetData($fileLinkInput, "")
 EndFunc
 
 Func PlayLink()
@@ -660,6 +756,7 @@ EndFunc
 Func GoPosition($iPos)
 	Local $sCommand = '{"currentTime":' & $iPos & '}'
 	SendCommand($sCommand)
+	$iGoPosition = $iPos
 EndFunc
 
 Func OnAutoItExit()
