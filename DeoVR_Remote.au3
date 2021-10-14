@@ -12,6 +12,7 @@ Opt("WinTitleMatchMode", 3) ; Exact title match mode.
 #include "Forms\MainForm.isf"
 #include <WinAPIFiles.au3>
 #include "gamepad.au3"
+#include <GuiToolTip.au3>
 
 ; Global initialization
 ; Opt("GUIOnEventMode", 1) ; cannot use event mode because of the loop
@@ -31,16 +32,25 @@ $bHaveGamepad = ( $lpJoy <> 0)
 
 GUISetState(@SW_SHOW,$MainForm)
 
-Local $iSecond =  @SEC, $hTimer = TimerInit(), $hLastPlayTimer = TimerInit()
+Local $iSecond =  @SEC
 Local $iCount =  0, $bHaveData = False
 
 Global $sFilePlaying, $iLength, $iPosition, $iPlayerState = -1, $iPlayingSpeed ; Current playback info
 Global $gaDropFiles[1]
-Global $iListIndex = -1, $bPlayFromStart = False
+Global $iListIndex = -1, $bPlayFromStart = False, $bLoopEnable = False 
 
-Global $iPosA = 0, $iPosB = 0, $iGoPosition = 0
+Global $hSliderToolTip = _GUICtrlSlider_GetToolTips($playSlider)
+
+Global $bCommandRunning = False , $sFulFillCriteria
+Global $iC
+Global $iPosA = 0, $iPosB = 0
+
+$Dummy = GUICtrlCreateDummy() ; For slider update
+$Dummy2 = GUICtrlCreateDummy() ; For double click list view item event.
+
 GUIRegisterMsg($WM_NOTIFY, "_WM_NOTIFY") ; For list view's double click event.
 GUIRegisterMsg ($WM_DROPFILES, "_WM_DROPFILES") ; For dropping files on the list.
+GUIRegisterMsg($WM_HSCROLL, "WM_HVSCROLL") ; For slider to display current time.
 
 While True
 	Sleep(10)
@@ -90,6 +100,16 @@ While True
 			SetLoopB()
 		Case $LoopClear
 			LoopClear()
+		Case $loopEnable
+			If _GUICtrlButton_GetCheck($loopEnable) = $BST_CHECKED Then 
+				$bLoopEnable = True
+			Else 
+				$bLoopEnable = False 
+			EndIf
+		Case $Dummy
+			SetToolTip()
+		Case $Dummy2
+			PlayItem(GUICtrlRead($Dummy2))
 	EndSwitch
 
 	; Make rich edit only accepts text and link.
@@ -105,105 +125,27 @@ While True
 	
 	If $bConnected Then 
 		If TimerDiff($hTimer) > $iCheckDataInterval Then  ; Check DeoVR message every 300 ms.
-			Local $iSize = TCPRecv($iSocket, 4, 1) , $sData = "", $sText = ""
-			If $iSize <> 0 Then ; Got some data to receive.
-				$bHaveData = True
-				$sData =  TCPRecv($iSocket, $iSize)
-				; ConsoleWrite($sData & @CRLF)
-				If $sData Then
-					Local $oResult = Json_Decode($sData) ; Turn the json data into object
-					If @error =  -2 Then 
-						; No longer connected.
-						Disconnect()
-					EndIf
-					If Json_IsObject($oResult) Then
-						If $sFilePlaying <> $oResult.Item("path") Then 
-							; Playing file is different.
-							$sFilePlaying = $oResult.Item("path")
-							GUICtrlSetData($filePlaying, $sFilePlaying ); Display file path and name
-						EndIf
-						if $iPlayerState <> $oResult.Item("playerState") _ 
-								Or GUICtrlRead($playerState) = "" Then
-							$iPlayerState =  $oResult.Item("playerState")
-							If $iPlayerState = 0 Then
-								GUICtrlSetData($playerState, "Playing" )
-							Else 
-								GUICtrlSetData($playerState, "Paused" )
-							EndIf
-						EndIf
-						; Done, now reset the variable
-						$sData = ""
-						; Below updates statis if not the same.
-						if $iLength <> Floor(Int($oResult.Item("duration"))) Then 
-							$iLength = Floor(Int($oResult.Item("duration")))
-							GUICtrlSetData($videoLength, TimeConvert($iLength) ) ; Display the video length
-							; Update the slide bar
-							_GUICtrlSlider_SetRange($playSlider, 0, $iLength)
-							If $iLength > 3600 Then  ; Longer than 1 hour, 5 minutes
-								_GUICtrlSlider_SetTicFreq($playSlider, 300)
-								_GUICtrlSlider_SetPageSize($playSlider, 300)
-							ElseIf $iLength > 600 Then 	; Longer than 10 minutes, 1 minutes
-								_GUICtrlSlider_SetTicFreq($playSlider, 60)
-								_GUICtrlSlider_SetPageSize($playSlider, 60)
-								; cw("page size:" & _GUICtrlSlider_GetPageSize($playSlider))
-							Else 
-								_GUICtrlSlider_SetTicFreq($playSlider, 15)  ; 15 seconds
-								_GUICtrlSlider_SetPageSize($playSlider, 15)
-							EndIf 
-						EndIf
-						If $iPosition <> Floor(Int($oResult.Item("currentTime"))) Then
-							$iPosition = Floor(Int($oResult.Item("currentTime")))
-							GUICtrlSetData($videoPosition, TimeConvert($iPosition) )
-							; Update the slide bar
-							_GUICtrlSlider_SetPos($playSlider, $iPosition)
-							If $iGoPosition = 0 Then
-								If $iPosB <> 0 Then ; Has looping selection
-									If $iPosition >= $iPosB Then
-										; Do the looping.
-										GoPosition($iPosA)
-									EndIf
-								EndIf 
-							Else 
-								;Jumping to a new position. Not updating.
-								If Abs($iGoPosition - $iPosition) < 3 Then ; within 3 seconds of margin.
-									$iGoPosition = 0
-								EndIf
-							EndIf 
-						EndIf
-						If $iPlayingSpeed <> $oResult.Item("playbackSpeed") Then 
-							$iPlayingSpeed = $oResult.Item("playbackSpeed")
-							GUICtrlSetData($playingSpeed, $oResult.Item("playbackSpeed") )						
-						EndIf
-					EndIf 
-				EndIf
-			EndIf
+			CheckAndSetData()
+			$hTimer = TimerInit()
 		EndIf ; ==> End of checking data
+		
 		If $iSecond <> @SEC Then  ; Do this every second.
+			$iSecond =  @SEC
+;~ 			; Below is to set the control button if playState change.
+;~ 			Local $sPlayerState =  GUICtrlRead($playerState), $sPause = GUICtrlRead($btnPause)
+;~ 			If $sPlayerState = "Playing" and $sPause = "Play" Then 
+;~ 				GUICtrlSetData($btnPause, "Pause")
+;~ 			Elseif $sPlayerState = "Paused" And $sPause = "Pause" Then 
+;~ 				GUICtrlSetData($btnPause, "Play")
+;~ 			EndIf
+			
+			; Check to see if the sent command is fulfilled.
+			FulFillCheck()
+
+			; Check the loop and playing list
+			PlayingCheck()
+		
 			$sent =  TCPSend($iSocket, 0 ) ; Keep alive.
-			
-			; Below is to set the control button if playState change.
-			Local $sPlayerState =  GUICtrlRead($playerState), $sPause = GUICtrlRead($btnPause)
-			If $sPlayerState = "Playing" and $sPause = "Play" Then 
-				GUICtrlSetData($btnPause, "Pause")
-			Elseif $sPlayerState = "Paused" And $sPause = "Pause" Then 
-				GUICtrlSetData($btnPause, "Play")
-			EndIf
-			
-			; Below is handling automatically playing next video.
-			If $iListIndex <> -1 And $iLength <> 0 Then ; Have an index, the current item.
-				$iCount =  _GUICtrlListView_GetItemCount($iList)
-				If $iListIndex < $iCount -1 Then
-					; Available at least one more to play.
-					If $iLength = $iPosition and GUICtrlRead($playerState) = "Playing" Then
-						; At the end of the file. Time to play next file
-						If TimerDiff($hLastPlayTimer) > 5000 Then ; Need to be at least 5 seconds apart.
-							$hLastPlayTimer = TimerInit()
-							PlayNextItem()
-						EndIf
-					EndIf
-				EndIf
-			EndIf
-			
 			If @error Then
 				ConsoleWrite("Send data error: " & @error & @CRLF)
 				; No longer connected
@@ -211,9 +153,9 @@ While True
 			Else 
 				; ConsoleWrite("Send success: " & $sent & @CRLF)
 			EndIf
-			$iSecond =  @SEC
+
 			; ConsoleWrite(" have data:" & $bHaveData & " iCount:" & $iCount & @CRLF)
-			If $bHaveData Then 
+			If $bHaveData Then   ; $bHaveData is set in function CheckAndSetData()
 				$iCount = 0
 				$bHaveData = False
 			Else 
@@ -230,14 +172,16 @@ While True
 		If @error Then
 			Disconnect()
 		EndIf
+
 	Else ; ==> If not connected.
-		; Do things every second while disconnetec.
-		If $iSecond <> @SEC Then
-			$iSecond =  @SEC
+		; Do things every 3 seconds while disconnetec.
+		If Mod(@SEC, 3) =0 And $iSecond <> @SEC Then
+			$iSecond = @SEC
 			; Disconnected. Reset all data.
 			If GUICtrlRead($filePlaying) <> "" Then 
 				ResetData()
 			EndIf
+			
 			Local $ip =  GUICtrlRead($hostInput),  $port =  GUICtrlRead($portInput)
 			$iSocket = TCPConnect($ip, $port)
 			If @error Then
@@ -250,6 +194,16 @@ While True
 	EndIf
 	
 	; Gamepad and joystick 0
+	GamePadControl()
+WEnd
+
+Func SetToolTip()
+	Local $iPos = Int(GUICtrlRead($Dummy))
+	_GUIToolTip_SetTitle($hSliderToolTip, "Time: " & TimeConvert($iPos) )
+	_GUIToolTip_Update($hSliderToolTip)
+EndFunc
+
+Func GamePadControl()
 	If $bHaveGamepad Then
 		$aJoyData = _GetJoy($lpJoy, 0)
 		If $aJoyData <> 0 Then 
@@ -289,25 +243,174 @@ While True
 			EndSelect 
 		EndIf
 	EndIf 
+EndFunc
+
+
+Func PlayingCheck()
+	; This function checks various things and do the thing.
 	
-WEnd
+	; if A B loop is enabled and play files in loops and lists.
+	If $bLoopEnable Then
+		If $iPosB > $iPosA Then  
+			; Valid A and B pos
+			If $iPosition >= $iPosB or $iPosition < $iPosA Then 
+				If Not $bCommandRunning Then
+					GoPosition($iPosA)
+				EndIf
+			EndIf
+		EndIf 
+	EndIf
+	
+	; Below is handling automatically playing next video.
+	If PlayingFileInList() Then 
+		; Set the video length if it's empty
+		If _GUICtrlListView_GetItemText($iList, $iListIndex, 3) = "" Then
+			_GUICtrlListView_SetItemText($iList, $iListIndex, TimeConvert($iLength), 3)
+		EndIf
+		$iCount =  _GUICtrlListView_GetItemCount($iList)
+		If $iListIndex < $iCount -1 Then
+			; Available at least one more to play.
+			If $iLength = $iPosition And $iPlayerState = 0 Then  ; $iPlayerState = 0 means Playing, not pause.
+				; At the end of the file. Time to play next file
+				If Not $bCommandRunning Then 
+					PlayNextItem()
+				EndIf 
+			EndIf
+		ElseIf $iListIndex = $iCount And $iLength = $iPosition And $iPlayerState = 0 Then
+			; Reach the end of the list. Pause it.
+			PauseToggle()
+		EndIf
+	EndIf
+EndFunc
+
+Func CheckAndSetData()
+	; This function reads tcp input from DeoVR then set the GUI status data
+	Local $iSize = TCPRecv($iSocket, 4, 1) , $sData = "", $sText = ""
+	If $iSize <> 0 Then ; Got some data to receive.
+		$bHaveData = True
+		Local $sData =  TCPRecv($iSocket, $iSize)
+		; ConsoleWrite($sData & @CRLF)
+		If $sData Then
+			Local $oResult = Json_Decode($sData) ; Turn the json data into object
+			If @error =  -2 Then 
+				; No longer connected.
+				Disconnect()
+				Return
+			EndIf
+			
+			If Json_IsObject($oResult) And Floor($oResult.Item("duration")) <> 0 Then
+				If $sFilePlaying <> $oResult.Item("path") Then 
+					; Playing file is different.
+					$sFilePlaying = $oResult.Item("path")
+					GUICtrlSetData($filePlaying, $sFilePlaying ); Display file path and name
+				EndIf
+				if $iPlayerState <> $oResult.Item("playerState") _ 
+						Or GUICtrlRead($playerState) = "" Then
+					$iPlayerState =  $oResult.Item("playerState")
+					If $iPlayerState = 0 Then
+						GUICtrlSetData($playerState, "Playing" )
+						GUICtrlSetData($btnPause, "Pause")
+					Else 
+						GUICtrlSetData($playerState, "Paused" )
+						GUICtrlSetData($btnPause, "Play")
+					EndIf
+					If PlayingFileInList() Then
+						If $iPlayerState = 0 Then 
+							_GUICtrlListView_SetItemText($iList, $iListIndex, "Playing", 2)
+						Else
+							_GUICtrlListView_SetItemText($iList, $iListIndex, "Paused", 2)
+						EndIf
+					EndIf
+				EndIf
+				; Below updates statis if not the same.
+				if $iLength <> Floor($oResult.Item("duration")) Then
+					cw("length:" & $iLength)
+					$iLength = Floor($oResult.Item("duration"))
+					GUICtrlSetData($videoLength, TimeConvert($iLength) ) ; Display the video length
+					; Update the slide bar
+					_GUICtrlSlider_SetRange($playSlider, 0, $iLength)
+					If $iLength > 3600 Then  ; Longer than 1 hour, 5 minutes
+						_GUICtrlSlider_SetTicFreq($playSlider, 300)
+						_GUICtrlSlider_SetPageSize($playSlider, 300)
+					ElseIf $iLength > 600 Then 	; Longer than 10 minutes, 1 minutes
+						_GUICtrlSlider_SetTicFreq($playSlider, 60)
+						_GUICtrlSlider_SetPageSize($playSlider, 60)
+						; cw("page size:" & _GUICtrlSlider_GetPageSize($playSlider))
+					Else 
+						_GUICtrlSlider_SetTicFreq($playSlider, 15)  ; 15 seconds
+						_GUICtrlSlider_SetPageSize($playSlider, 15)
+					EndIf
+					
+					If PlayingFileInList() Then
+						; Just played a new file. Now handle A B Loop after the file loaded.
+						Local $aData = _GUICtrlListView_GetItemTextArray($iList, $iListIndex)
+						If TimeConvertBack($aData[4]) <> $iLength Then 
+							_GUICtrlListView_SetItemText( $iList, $iListIndex, TimeConvert($iLength),3 )
+						EndIf
+						If $aData[5] <> "" And $aData[5] <> $aData[6] Then
+							$iPosA = TimeConvertBack($aData[5])
+							$iPosB = TimeConvertBack($aData[6])
+							_GUICtrlSlider_SetSel( $playSlider, $iPosA, $iPosB)
+						EndIf
+					EndIf
+				EndIf
+				
+				If $iPosition <> Floor($oResult.Item("currentTime")) Then
+					$iPosition = Floor($oResult.Item("currentTime"))
+					GUICtrlSetData($videoPosition, TimeConvert($iPosition) )
+					; Update the slide bar
+					_GUICtrlSlider_SetPos($playSlider, $iPosition)
+				EndIf
+				
+				If $iPlayingSpeed <> $oResult.Item("playbackSpeed") Then 
+					$iPlayingSpeed = $oResult.Item("playbackSpeed")
+					GUICtrlSetData($playingSpeed, $oResult.Item("playbackSpeed") )						
+				EndIf
+			EndIf ; ==> End of result is a json objet
+		EndIf ; ==> End of $sData is valid
+	EndIf ; ==> End of $iSize<>0
+EndFunc
 
 Func LoopClear()
 	_GUICtrlSlider_ClearSel($playSlider)
 	$iPosA = 0
 	$iPosB = 0
+	If $iListIndex <> -1 Then 
+		; The file playing is the one in the list
+		_GUICtrlListView_SetItemText($iList, $iListIndex, "", 4)
+		_GUICtrlListView_SetItemText($iList, $iListIndex, "", 5)
+	EndIf
 EndFunc
 
 Func SetLoopA()
 	$iPosA = _GUICtrlSlider_GetPos($playSlider)
-	If $iPosB = 0 Or $iPosB < $iPosA Then $iPosB = $iLength
+	If $iPosB = 0 Or $iPosB <= $iPosA Then $iPosB = $iLength
 	_GUICtrlSlider_SetSel($playSlider, $iPosA, $iPosB)
+	If PlayingFileInList()  Then 
+		; The file playing is the one in the list
+		_GUICtrlListView_SetItemText($iList, $iListIndex, TimeConvert($iPosA), 4)
+		_GUICtrlListView_SetItemText($iList, $iListIndex, TimeConvert($iPosB), 5)
+	EndIf
+EndFunc
+
+Func PlayingFileInList()
+	; This function will determine if the file playing is the current item in the list
+	; It needs special handling because local file name change from e:\video to e:/video
+	If $iListIndex = -1 Then return False 
+	Local $str = _GUICtrlListView_GetItemText($iList, $iListIndex)
+	$str = StringReplace($str, "\", "/")
+	return $sFilePlaying = $str
 EndFunc
 
 Func SetLoopB()
 	$iPosB = _GUICtrlSlider_GetPos($playSlider)
-	If $iPosA > $iPosB Then $iPosA = 0
+	If $iPosA >= $iPosB Then $iPosA = 0
 	_GUICtrlSlider_SetSel($playSlider, $iPosA, $iPosB)
+	If PlayingFileInList() Then 
+		; The file playing is the one in the list
+		_GUICtrlListView_SetItemText($iList, $iListIndex, TimeConvert($iPosA), 4)
+		_GUICtrlListView_SetItemText($iList, $iListIndex, TimeConvert($iPosB), 5)
+	EndIf
 EndFunc
 
 
@@ -317,9 +420,10 @@ Func SliderSetTime()
 		Return 
 	EndIf
 	If Not $bConnected Then Return
+	
 	Local $iNewPos = _GUICtrlSlider_GetPos($playSlider)
 
-	If $iNewPos <> $iPosition Then GoPosition($iNewPos)
+	If Abs($iNewPos - $iPosition)>5 Then GoPosition($iNewPos)
 	; $iPosition = $iNewPos ; Prevent it from being called again.
 EndFunc
 
@@ -346,7 +450,14 @@ Func TimeConvert($i)
 	Local $iHour =  Floor($i / 3600) 
 	Local $iMin = Floor( ($i - 3600 * $iHour) / 60)
 	Local $iSec = Mod($i, 60)
-	Return StringFormat('%02d:%02d:%02d', $iHour, $iMin, $iSec)
+	Return StringFormat('%01d:%02d:%02d', $iHour, $iMin, $iSec)
+EndFunc
+
+; Convert the HH:MM:SS back to seconds
+Func TimeConvertBack($str)
+	If StringInStr($str, ":", 2) = 0 Then Return 0
+	Local $aTime = StringSplit($str, ":")
+	Return Int($aTime[1]) * 3600 + Int($aTime[2]) * 60 + Int($aTime[3])
 EndFunc
 
 ; Load the saved m3u to the play list.
@@ -381,9 +492,29 @@ Func LoadList()
 			ExitLoop 
 		EndIf
 		; Ignore the extra info line
-		If StringLeft($sLine, 8) = "#EXTINF:" then ContinueLoop
-		; Add the item.
-		_GUICtrlListView_AddItem($iList, $sLine)
+		If StringLeft($sLine, 8) = "#EXTINF:" then
+			Local $aData[1][6]
+			$sLine = StringTrimLeft($sLine, 8)
+			Local $aResult = StringSplit($sLine, " ,")
+			If $aResult[0] = 4 Then 
+				; With A B data
+				$aData[0][1] = $aResult[4]	; Title of the file
+				$aData[0][4] = TimeConvert( Int(StringTrimLeft($aResult[2], 5)) ); Loop A
+				$aData[0][5] = TimeConvert( Int(StringTrimLeft($aResult[3], 5)) ); Loop B
+				
+			ElseIf $aResult[0] = 2 Then
+				; Withou A B data
+				$aData[0][1] = $aResult[2] ; Title of the file
+			EndIf
+			
+			If Int($aResult[1]) <> -1 Then
+				$aData[0][3] = TimeConvert(Int($aResult[1])) ; Length of video
+			EndIf
+			$aData[0][0] = FileReadLine($hFile) ; The full file/path
+			; Add the item.
+			_GUICtrlListView_AddArray($iList, $aData)
+			ContinueLoop
+		EndIf
 	WEnd 
 	FileClose($hFile)
 	$iListIndex = -1
@@ -426,10 +557,32 @@ Func SaveList()
 		Return
 	EndIf
 	
+	; Write the required first line.
+	FileWriteLine($hFile, "#EXTM3U")
+	; Now write the file/path list
 	Local $iCount = _GUICtrlListView_GetItemCount ($iList)
 	For $i = 0 to $iCount-1
 		Local $aData = _GUICtrlListView_GetItemTextArray ($iList, $i)
-		FileWriteLine($hFile, "#EXTINF:-1, ")
+		Local $iVlength, $iVposA, $iVposB, $line = "#EXTINF:"
+		If $aData[0] = 6 Then
+			If $aData[4] <> "" Then
+				; Has length data
+				$iVlength = TimeConvertBack($aData[4])
+			Else
+				$iVlength = -1
+			EndIf
+			$line = $line & $iVlength
+			If $aData[4] <> "" Then
+				; Has Loop data
+				$iVposA = TimeConvertBack($aData[5])
+				$iVposB = TimeConvertBack($aData[6])
+				$line = $line & " PosA=" & $iVposA & " PosB=" & $iVposB
+			EndIf
+			FileWriteLine($hFile, $line & "," & $aData[2]) ; $aData[2] is the name of the file.
+		Else 
+			FileWriteLine($hFile, "#EXTINF:-1, ")
+		EndIf 
+		; Write the real file/path on second line.
 		FileWriteLine($hFile, $aData[1])
 	Next
 	FileClose($hFile)
@@ -437,36 +590,19 @@ Func SaveList()
 EndFunc
 
 Func PauseToggle()
-	If Not $bConnected Then return 1
-	
-	Local $sState = GUICtrlRead($playerState)
+	If Not $bConnected or $bCommandRunning Then return 1
+
 	If $iPlayerState = 0 Then
 		; Pause it
 		SendCommand('{"playerState":1}')
-		$iPlayerState = 1
-		GUICtrlSetData($playerState, "Paused")
+		$bCommandRunning = True 
+		$sFulFillCriteria = "$iPlayerState=1"
 	Else
 		; Play it
 		SendCommand('{"playerState":0}')
-		$iPlayerState = 0
-		GUICtrlSetData($playerState, "Playing")
-		If $iListIndex <> -1 Then 
-			_GUICtrlListView_SetItemText ($iList, $iListIndex, "Playing", 1)
-		EndIf
+		$bCommandRunning = True 
+		$sFulFillCriteria = "$iPlayerState=0"
 	EndIf
-	; Handle the play list
-	If $iListIndex <> -1 And _ 
-		$sFilePlaying = _GUICtrlListView_GetItemText($iList, $iListIndex) Then 
-		; Only set text if the file playing is the play list's current item.
-		If $iPlayerState Then 
-			; Paused
-			_GUICtrlListView_SetItemText ($iList, $iListIndex, "Paused", 1)			
-		Else 
-			; Playing
-			_GUICtrlListView_SetItemText ($iList, $iListIndex, "Playing", 1)			
-		EndIf
-	EndIf
-
 EndFunc
 
 ; Send a text command to DeoVR player
@@ -488,18 +624,18 @@ Func PlayItem($iIndex)
 	
 	If $iListIndex <> -1 Then 
 		; Set previous playing to nothing
-		_GUICtrlListView_SetItemText($iList, $iListIndex, "", 1)
+		_GUICtrlListView_SetItemText($iList, $iListIndex, "", 2)
 	EndIf
 	; Set the current index number
 	$iListIndex = $iIndex
 
 	If $bConnected Then
-		Local $sText = _GUICtrlListView_GetItemText($iList, $iListIndex) ; Get current item's text
+		Local $sText = _GUICtrlListView_GetItemText($iList, $iListIndex) ; Get current item's raw path
 		Play($sText)
-		_GUICtrlListView_SetItemText ($iList, $iListIndex, "Playing", 1)
+		_GUICtrlListView_SetItemText ($iList, $iListIndex, "Playing", 2)
 	Else 
 		; Not connected, but can be selected as the active item.
-		_GUICtrlListView_SetItemText ($iList, $iListIndex, "Active", 1)
+		_GUICtrlListView_SetItemText ($iList, $iListIndex, "Active", 2)
 	EndIf 
 EndFunc
 
@@ -516,14 +652,16 @@ Func PlayPreviousItem()
 		; Play the next one.
 		$iItemToPlay = $iListIndex - 1
 		; First set the "Playing" to nothing
-		_GUICtrlListView_SetItemText ($iList, $iListIndex, "", 1)
+		_GUICtrlListView_SetItemText ($iList, $iListIndex, "", 2)
 	EndIf
-	; Set the playing item to "Playing"
-	Local $sNewText = _GUICtrlListView_GetItemText($iList, $iItemToPlay)
-	_GUICtrlListView_SetItemText ($iList, $iItemToPlay, "Playing", 1)
-	_GUICtrlListView_SetItemSelected ($iList, $iItemToPlay)
+	
 	$iListIndex = $iItemToPlay
-	Play($sNewText)
+	Local $sFile = _GUICtrlListView_GetItemText($iList, $iListIndex)
+	; Set the playing item to "Playing"
+	_GUICtrlListView_SetItemText ($iList, $iListIndex, "Playing", 2)
+	_GUICtrlListView_SetItemSelected ($iList, $iListIndex)
+	
+	Play($sFile)
 EndFunc
 
 ; Play the next item in the list
@@ -539,11 +677,11 @@ Func PlayNextItem()
 		; Play the next one.
 		$iItemToPlay = $iListIndex + 1
 		; First set the "Playing" to nothing
-		_GUICtrlListView_SetItemText ($iList, $iListIndex, "", 1 )
+		_GUICtrlListView_SetItemText ($iList, $iListIndex, "", 2 )
 	EndIf
 	; Set the playing item to "Playing"
 	Local $sNewText = _GUICtrlListView_GetItemText($iList, $iItemToPlay)
-	_GUICtrlListView_SetItemText ($iList, $iItemToPlay, "Playing", 1)
+	_GUICtrlListView_SetItemText ($iList, $iItemToPlay, "Playing", 2)
 	_GUICtrlListView_SetItemSelected ($iList, $iItemToPlay)
 	$iListIndex = $iItemToPlay
 	Play($sNewText)
@@ -586,11 +724,24 @@ Func _WM_NOTIFY($hWnd, $iMsg, $wParam, $lParam) ; Special handling of double cli
 					$tInfo = DllStructCreate($tagNMITEMACTIVATE, $lParam)
 					$iIndex = DllStructGetData($tInfo, "Index")
 					cw("Double clicked on index:" & $iIndex)
-					PlayItem($iIndex)
+					GUICtrlSendToDummy($Dummy2, $iIndex)
 			EndSwitch
     EndSwitch
     Return $GUI_RUNDEFMSG	; Let Autoit handle it from here.
 EndFunc
+
+Func WM_HVSCROLL($hwnd, $iMsg, $wParam, $lParam) ; Slider
+    #forceref $hWnd, $iMsg, $wParam, $lParam
+	
+    $hWndSlider = $playSlider
+    If Not IsHWnd($playSlider) Then $hWndSlider = GUICtrlGetHandle($playSlider)
+	
+    Switch $lParam
+        Case $hWndSlider
+			GUICtrlSendToDummy($Dummy, GUICtrlRead($playSlider))
+    EndSwitch
+	Return $GUI_RUNDEFMSG	; Let Autoit handle it from here.
+EndFunc   ;==>WM_HVSCROLL
 
 Func SetPlayFromStart()
 	$bPlayFromStart = (GUICtrlRead($chkPlayFromBeginning) = $GUI_CHECKED )
@@ -621,8 +772,9 @@ Func ResetData()
 			_GUICtrlSlider_ClearSel($playSlider)
 		EndIf 
 	EndIf
+	$bCommandRunning =  False 
 	If $iListIndex <> -1 Then 
-		_GUICtrlListView_SetItemText ($iList, $iListIndex, "Active", 1)
+		_GUICtrlListView_SetItemText ($iList, $iListIndex, "Active", 2)
 	EndIf
 EndFunc
 
@@ -634,14 +786,17 @@ Func AddFile2Queue($sFile)
 		If $reply = $IDCANCEL Then Return
 	ElseIf StringInStr(FileGetAttrib($sFile), "D") Then 
 		; It's a directory, ignore.
+		MsgBox(0, "Error", "Cannot add a directory to the list.")
 		Return
 	EndIf
-	GUICtrlCreateListViewItem($sFile & "|", $iList)
+	Local $sFileName = StringTrimLeft($sFile, StringInStr($sFile, "\", 2, -1))
+	GUICtrlCreateListViewItem($sFile & "|" & $sFileName, $iList)
 EndFunc
 
 Func AddLink2Queue($sLink)
 	If $sLink <> "" Then
-		GUICtrlCreateListViewItem($sLink & "|", $iList)
+		Local $sFileName = StringTrimLeft($sLink, StringInStr($sLink, "/", 2, -1))
+		GUICtrlCreateListViewItem($sLink & "|" & $sFileName, $iList)
 	EndIf
 	_GUICtrlRichEdit_SetText($linkInput, "")
 EndFunc
@@ -667,12 +822,37 @@ Func Play($str)
 		$str = StringReplace($str, "\", "/")
 		Local $sCommand
 		If $bPlayFromStart Then
-			$sCommand = '{"path":"' & $str & '","currentTime":0}'
+			$sCommand = '{"path":"' & $str & '","currentTime":0,"playerState":0}'
 		Else 
-			$sCommand = '{"path":"' & $str & '"}'
-		EndIf 
+			$sCommand = '{"path":"' & $str & '","playerState":0}'
+		EndIf
+		If $bCommandRunning Then
+			MsgBox(0, "Waiting for command", "Sorry, still waiting for last command to take effect.")
+			Return 
+		EndIf
 		SendCommand($sCommand)
+		$bCommandRunning = True 
+		$sFulFillCriteria = "$sFilePlaying=" & Q($str)
 	EndIf 
+EndFunc
+
+Func Q($str)
+	; Enclose the string with single quote.
+	Return "'" & $str & "'"
+EndFunc
+
+Func FulFillCheck()
+	; Check to see if the fulfill criteria is met.
+	If $bCommandRunning Then
+		GUICtrlSetData($connectStatus, "Command sent. Waiting DeoVR.")
+	EndIf
+	$done = Execute($sFulFillCriteria)
+	If @error Then Return
+	If $done Then
+		$bCommandRunning = False
+		GUICtrlSetData($connectStatus, "Command done.")
+		$sFulFillCriteria = ""
+	EndIf
 EndFunc
 
 Func PlayLink()
@@ -709,7 +889,6 @@ Func Connect()
 		GUICtrlSetData($connectStatus, "Disconnected.")
 		GUICtrlSetData($btnConnect, "Connect")
 	EndIf
-	$hTimer = TimerInit()
 EndFunc
 
 Func JumpBack()
@@ -755,8 +934,11 @@ EndFunc
 
 Func GoPosition($iPos)
 	Local $sCommand = '{"currentTime":' & $iPos & '}'
-	SendCommand($sCommand)
-	$iGoPosition = $iPos
+	If $iPos < $iLength And $iPos >= 0 And Not $bCommandRunning Then 
+		SendCommand($sCommand)
+		$bCommandRunning = True 
+		$sFulFillCriteria = "Abs($iPosition-" & $iPos & ")<5"
+	EndIf 
 EndFunc
 
 Func OnAutoItExit()
