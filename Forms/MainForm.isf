@@ -12,7 +12,7 @@
 #include <ColorConstants.au3>
 If Not (@Compiled ) Then DllCall("User32.dll","bool","SetProcessDPIAware")
 
-$MainForm = GUICreate("MainForm",933,1027,-1,-1,BitOr($WS_SIZEBOX,$WS_SYSMENU,$WS_MINIMIZEBOX),$WS_EX_ACCEPTFILES)
+$MainForm = GUICreate("MainForm",933,1059,-1,-1,BitOr($WS_SIZEBOX,$WS_SYSMENU,$WS_MINIMIZEBOX),$WS_EX_ACCEPTFILES)
 GUICtrlCreateLabel("DeoVR Host",60,40,197,27,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
@@ -143,7 +143,7 @@ $addLinkToQueue = GUICtrlCreateButton("Add To List",422,586,185,40,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetTip(-1,"Add this link to the play list.")
 GUICtrlSetResizing(-1,802)
-GUICtrlCreateLabel("You can drag and drop files below.",287,651,248,27,-1,-1)
+GUICtrlCreateLabel("You can drag and drop files below.",87,651,416,32,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
@@ -163,7 +163,7 @@ GUICtrlSetResizing(-1,834)
 $chkPlayFromBeginning = GUICtrlCreateCheckbox("Play from the beginning.",215,957,301,27,-1,-1)
 GUICtrlSetFont(-1,10,400,0,"MS Sans Serif")
 GUICtrlSetTip(-1,"Play the video file/path from the beginning.")
-GUICtrlSetResizing(-1,836)
+GUICtrlSetResizing(-1,834)
 $btnSaveList = GUICtrlCreateButton("Save List",543,950,126,41,-1,-1)
 GUICtrlSetTip(-1,"Save the play list to a M3U file.")
 GUICtrlSetResizing(-1,836)
@@ -179,7 +179,7 @@ Handle_deklaration=default
 Handle_deklaration_const=false
 title=MainForm
 breite=933
-hoehe=1027
+hoehe=1059
 style=$WS_SIZEBOX+$WS_SYSMENU+$WS_MINIMIZEBOX
 exstyle=$WS_EX_ACCEPTFILES
 bgcolour=0xF0F0F0
@@ -210,7 +210,7 @@ gui_event_resized=
 gui_event_dropped=
 defaultfont=MS Sans Serif
 defaultfontsize=8
-[0x001120F8]
+[0x000A1D18]
 type=label
 handle=432
 locked=0
@@ -239,7 +239,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000A2024]
+[0x00031D1A]
 type=label
 handle=433
 locked=0
@@ -268,7 +268,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=9
-[0x000820B6]
+[0x00031D1C]
 type=label
 handle=434
 locked=0
@@ -297,7 +297,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00092016]
+[0x00031D1E]
 type=label
 handle=435
 locked=0
@@ -326,7 +326,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000920AC]
+[0x00031D20]
 type=label
 handle=436
 locked=0
@@ -355,7 +355,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=8
-[0x000A2082]
+[0x00031D22]
 type=label
 handle=437
 locked=0
@@ -384,7 +384,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=10
-[0x000E1E88]
+[0x00031D24]
 type=label
 handle=438
 locked=0
@@ -413,7 +413,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=16
-[0x000D206E]
+[0x00031D26]
 type=label
 handle=439
 locked=0
@@ -442,7 +442,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=14
-[0x00142072]
+[0x00031D28]
 type=label
 handle=440
 locked=0
@@ -471,7 +471,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x0009210C]
+[0x00031D2A]
 type=input
 handle=441
 locked=0
@@ -500,7 +500,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00092104]
+[0x00031D2C]
 type=label
 handle=442
 locked=0
@@ -529,7 +529,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000A21D8]
+[0x00031D2E]
 type=input
 handle=443
 locked=0
@@ -558,7 +558,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000B203C]
+[0x00031D30]
 type=button
 handle=444
 locked=0
@@ -587,7 +587,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000A210E]
+[0x00031D32]
 type=label
 handle=445
 locked=0
@@ -616,7 +616,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x0013207A]
+[0x00031D34]
 type=group
 handle=446
 locked=0
@@ -645,7 +645,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000A2100]
+[0x00031D36]
 type=label
 handle=447
 locked=0
@@ -674,7 +674,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=11
-[0x0009210A]
+[0x00031D38]
 type=label
 handle=448
 locked=0
@@ -703,7 +703,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=12
-[0x00092106]
+[0x00041D3A]
 type=richedit
 handle=449
 locked=0
@@ -732,7 +732,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00092108]
+[0x00051D3C]
 type=button
 handle=450
 locked=0
@@ -761,7 +761,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=32
-[0x0008208E]
+[0x00041D3E]
 type=label
 handle=451
 locked=0
@@ -790,7 +790,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=30
-[0x000620DA]
+[0x00031D40]
 type=button
 handle=452
 locked=0
@@ -819,7 +819,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=33
-[0x000620D8]
+[0x009201D4]
 type=button
 handle=453
 locked=0
@@ -848,7 +848,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000620D6]
+[0x000C206A]
 type=button
 handle=454
 locked=0
@@ -877,7 +877,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000620D4]
+[0x001120BE]
 type=button
 handle=455
 locked=0
@@ -906,7 +906,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000620D2]
+[0x00081FE0]
 type=button
 handle=456
 locked=0
@@ -935,7 +935,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000620D0]
+[0x00091FE2]
 type=label
 handle=457
 locked=0
@@ -964,7 +964,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000620CE]
+[0x00182012]
 type=input
 handle=458
 locked=0
@@ -993,7 +993,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000620CC]
+[0x000B1F94]
 type=button
 handle=459
 locked=0
@@ -1022,7 +1022,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=28
-[0x000620CA]
+[0x000C21D0]
 type=button
 handle=460
 locked=0
@@ -1051,7 +1051,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=29
-[0x000E2030]
+[0x00141F78]
 type=button
 handle=461
 locked=0
@@ -1080,11 +1080,11 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00102036]
+[0x001E2008]
 type=checkbox
 handle=462
 locked=0
-resize=836
+resize=834
 x=215
 y=957
 width=301
@@ -1109,7 +1109,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000A2050]
+[0x00171F86]
 type=button
 handle=463
 locked=0
@@ -1138,7 +1138,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000B2074]
+[0x00111E84]
 type=slider
 handle=464
 locked=0
@@ -1167,7 +1167,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000B201A]
+[0x000B2080]
 type=button
 handle=465
 locked=0
@@ -1196,7 +1196,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000C2068]
+[0x000A2090]
 type=button
 handle=466
 locked=0
@@ -1225,7 +1225,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=20
-[0x000D209A]
+[0x000820DC]
 type=button
 handle=467
 locked=0
@@ -1254,7 +1254,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=21
-[0x0008208C]
+[0x0009208C]
 type=label
 handle=468
 locked=0
@@ -1283,7 +1283,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000A2080]
+[0x000E209A]
 type=listview
 handle=469
 locked=0
@@ -1312,7 +1312,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000A2102]
+[0x000D2074]
 type=checkbox
 handle=470
 locked=0
@@ -1341,15 +1341,15 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00101E84]
+[0x000B2050]
 type=label
 handle=471
 locked=0
 resize=802
-x=287
+x=87
 y=651
-width=248
-height=27
+width=416
+height=32
 func=
 font=Tahoma
 fontsize=11
