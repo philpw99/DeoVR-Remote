@@ -12,7 +12,7 @@
 #include <ColorConstants.au3>
 If Not (@Compiled ) Then DllCall("User32.dll","bool","SetProcessDPIAware")
 
-$MainForm = GUICreate("MainForm",933,1059,-1,-1,BitOr($WS_SIZEBOX,$WS_SYSMENU,$WS_MINIMIZEBOX),$WS_EX_ACCEPTFILES)
+$MainForm = GUICreate("DeoVR Remote",933,1059,-1,-1,BitOr($WS_SIZEBOX,$WS_SYSMENU,$WS_MINIMIZEBOX),$WS_EX_ACCEPTFILES)
 GUICtrlCreateLabel("DeoVR Host",60,40,197,27,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
@@ -91,8 +91,8 @@ GUICtrlSetResizing(-1,802)
 $LoopB = GUICtrlCreateButton("B",289,334,48,40,-1,-1)
 GUICtrlSetTip(-1,"Set Loop B")
 GUICtrlSetResizing(-1,802)
-$LoopClear = GUICtrlCreateButton("Clear",545,334,81,40,-1,-1)
-GUICtrlSetTip(-1,"Clear the A B Loop selection.")
+$LoopClear = GUICtrlCreateButton("Clear",485,334,81,40,-1,-1)
+GUICtrlSetTip(-1,"Clear the active item's A B Loop selection.")
 GUICtrlSetResizing(-1,802)
 $loopEnable = GUICtrlCreateCheckbox("Enable",358,344,109,20,-1,-1)
 GUICtrlSetFont(-1,12,400,0,"MS Sans Serif")
@@ -147,7 +147,7 @@ GUICtrlCreateLabel("You can drag and drop files below.",87,651,416,32,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-$iList = GUICtrlCreatelistview("Hidden|File / Path List|Status|Length|A|B",60,690,818,252,-1,BitOr($LVS_EX_FULLROWSELECT,$WS_EX_CLIENTEDGE,$WS_EX_ACCEPTFILES))
+$iList = GUICtrlCreatelistview("Hidden|Title|Status|Length|A|B",60,688,818,252,$LVS_SINGLESEL,BitOr($LVS_EX_FULLROWSELECT,$WS_EX_CLIENTEDGE,$WS_EX_ACCEPTFILES))
 GUICtrlSetState(-1,BitOr($GUI_SHOW,$GUI_ENABLE,$GUI_DROPACCEPTED))
 GUICtrlSetFont(-1,10,400,0,"MS Sans Serif")
 GUICtrlSetResizing(-1,102)
@@ -177,7 +177,7 @@ GUICtrlSetResizing(-1,836)
 [gui]
 Handle_deklaration=default
 Handle_deklaration_const=false
-title=MainForm
+title=DeoVR Remote
 breite=933
 hoehe=1059
 style=$WS_SIZEBOX+$WS_SYSMENU+$WS_MINIMIZEBOX
@@ -190,7 +190,7 @@ code=
 codebeforegui=#include <ColorConstants.au3>[BREAK]If Not (@Compiled ) Then DllCall("User32.dll","bool","SetProcessDPIAware")
 xpos=-1
 ypos=-1
-center_gui=true
+center_gui=false
 title_textmode=normal
 isf_include_once=false
 only_controls_in_isf=false
@@ -210,7 +210,7 @@ gui_event_resized=
 gui_event_dropped=
 defaultfont=MS Sans Serif
 defaultfontsize=8
-[0x000A1D18]
+[0x00081F20]
 type=label
 handle=432
 locked=0
@@ -239,7 +239,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00031D1A]
+[0x00011F22]
 type=label
 handle=433
 locked=0
@@ -268,7 +268,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=9
-[0x00031D1C]
+[0x00011F24]
 type=label
 handle=434
 locked=0
@@ -297,7 +297,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00031D1E]
+[0x00011F26]
 type=label
 handle=435
 locked=0
@@ -326,7 +326,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00031D20]
+[0x00011F28]
 type=label
 handle=436
 locked=0
@@ -355,7 +355,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=8
-[0x00031D22]
+[0x00011F2A]
 type=label
 handle=437
 locked=0
@@ -384,7 +384,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=10
-[0x00031D24]
+[0x00011F2C]
 type=label
 handle=438
 locked=0
@@ -413,7 +413,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=16
-[0x00031D26]
+[0x00011F2E]
 type=label
 handle=439
 locked=0
@@ -442,7 +442,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=14
-[0x00031D28]
+[0x00011F30]
 type=label
 handle=440
 locked=0
@@ -471,7 +471,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00031D2A]
+[0x00011F32]
 type=input
 handle=441
 locked=0
@@ -500,7 +500,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00031D2C]
+[0x00011F34]
 type=label
 handle=442
 locked=0
@@ -529,7 +529,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00031D2E]
+[0x00011F36]
 type=input
 handle=443
 locked=0
@@ -558,7 +558,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00031D30]
+[0x00011F38]
 type=button
 handle=444
 locked=0
@@ -587,7 +587,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00031D32]
+[0x00011F3A]
 type=label
 handle=445
 locked=0
@@ -616,7 +616,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00031D34]
+[0x00011F3C]
 type=group
 handle=446
 locked=0
@@ -645,7 +645,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00031D36]
+[0x00011F3E]
 type=label
 handle=447
 locked=0
@@ -674,7 +674,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=11
-[0x00031D38]
+[0x00011F40]
 type=label
 handle=448
 locked=0
@@ -703,7 +703,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=12
-[0x00041D3A]
+[0x00011F42]
 type=richedit
 handle=449
 locked=0
@@ -732,7 +732,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00051D3C]
+[0x00011F44]
 type=button
 handle=450
 locked=0
@@ -761,7 +761,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=32
-[0x00041D3E]
+[0x00011F46]
 type=label
 handle=451
 locked=0
@@ -790,7 +790,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=30
-[0x00031D40]
+[0x00011F48]
 type=button
 handle=452
 locked=0
@@ -819,7 +819,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=33
-[0x009201D4]
+[0x00011F4A]
 type=button
 handle=453
 locked=0
@@ -848,7 +848,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000C206A]
+[0x00011F4C]
 type=button
 handle=454
 locked=0
@@ -877,7 +877,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x001120BE]
+[0x00011F4E]
 type=button
 handle=455
 locked=0
@@ -906,7 +906,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00081FE0]
+[0x00011F50]
 type=button
 handle=456
 locked=0
@@ -935,7 +935,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00091FE2]
+[0x00011F52]
 type=label
 handle=457
 locked=0
@@ -964,7 +964,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00182012]
+[0x00011F54]
 type=input
 handle=458
 locked=0
@@ -993,7 +993,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000B1F94]
+[0x00011F56]
 type=button
 handle=459
 locked=0
@@ -1022,7 +1022,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=28
-[0x000C21D0]
+[0x00011F58]
 type=button
 handle=460
 locked=0
@@ -1051,7 +1051,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=29
-[0x00141F78]
+[0x00011F5A]
 type=button
 handle=461
 locked=0
@@ -1080,7 +1080,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x001E2008]
+[0x00011F5C]
 type=checkbox
 handle=462
 locked=0
@@ -1109,7 +1109,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00171F86]
+[0x00011F5E]
 type=button
 handle=463
 locked=0
@@ -1138,7 +1138,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00111E84]
+[0x00011F60]
 type=slider
 handle=464
 locked=0
@@ -1167,7 +1167,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000B2080]
+[0x00011F64]
 type=button
 handle=465
 locked=0
@@ -1196,7 +1196,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000A2090]
+[0x00011F66]
 type=button
 handle=466
 locked=0
@@ -1225,12 +1225,12 @@ iconindex=
 iconlarge=0
 textmode=text
 order=20
-[0x000820DC]
+[0x00011F68]
 type=button
 handle=467
 locked=0
 resize=802
-x=545
+x=485
 y=334
 width=81
 height=40
@@ -1239,7 +1239,7 @@ font=MS Sans Serif
 fontsize=8
 fontstyle=400
 fontattribute=0
-tooltip=Clear the A B Loop selection.
+tooltip=Clear the active item's A B Loop selection.
 bgimage=
 textcolour=0x000000
 id=$LoopClear
@@ -1254,7 +1254,7 @@ iconindex=
 iconlarge=0
 textmode=text
 order=21
-[0x0009208C]
+[0x00011F6A]
 type=label
 handle=468
 locked=0
@@ -1283,13 +1283,13 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000E209A]
+[0x00011F6C]
 type=listview
 handle=469
 locked=0
 resize=102
 x=60
-y=690
+y=688
 width=818
 height=252
 func=
@@ -1301,9 +1301,9 @@ tooltip=
 bgimage=
 textcolour=0x000000
 id=$iList
-text=Hidden|File / Path List|Status|Length|A|B
+text=Hidden|Title|Status|Length|A|B
 state=$GUI_SHOW+$GUI_ENABLE+$GUI_DROPACCEPTED
-style=
+style=$LVS_SINGLESEL
 exstyle=$LVS_EX_FULLROWSELECT+$WS_EX_CLIENTEDGE+$WS_EX_ACCEPTFILES
 bgcolour=
 code=_GUICtrlListView_HideColumn($iList, 0)[BREAK]_GUICtrlListView_SetColumnWidth($iList, 1, 500)[BREAK]_GUICtrlListView_SetColumnWidth($iList, 2, 100)[BREAK]_GUICtrlListView_SetColumnWidth($iList, 3, 100)[BREAK]_GUICtrlListView_SetColumn($iList, 4, "A", 100, 2)[BREAK]_GUICtrlListView_SetColumn($iList, 5, "B", 100, 2)
@@ -1312,7 +1312,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000D2074]
+[0x00021F72]
 type=checkbox
 handle=470
 locked=0
@@ -1341,7 +1341,7 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x000B2050]
+[0x00011F74]
 type=label
 handle=471
 locked=0
