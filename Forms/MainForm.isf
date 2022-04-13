@@ -10,164 +10,172 @@
 #include <GuiRichEdit.au3>
 
 #include <ColorConstants.au3>
-If Not (@Compiled ) Then DllCall("User32.dll","bool","SetProcessDPIAware")
+; If Not (@Compiled ) Then DllCall("User32.dll","bool","SetProcessDPIAware")
 
-$MainForm = GUICreate("DeoVR Remote",933,1059,-1,-1,BitOr($WS_SIZEBOX,$WS_SYSMENU,$WS_MINIMIZEBOX),$WS_EX_ACCEPTFILES)
-GUICtrlCreateLabel("DeoVR Host",60,40,197,27,-1,-1)
+$MainForm = GUICreate("DeoVR Remote",654,852,-1,-1,BitOr($WS_SIZEBOX,$WS_SYSMENU,$WS_MINIMIZEBOX),$WS_EX_ACCEPTFILES)
+GUICtrlCreateLabel("DeoVR Host",21,16,99,17,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-GUICtrlCreateLabel("Port",443,43,51,27,-1,-1)
+GUICtrlCreateLabel("Port",410,20,51,16,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,804)
-$hostInput = GUICtrlCreateInput("127.0.0.1",60,80,362,34,-1,$WS_EX_CLIENTEDGE)
+$hostInput = GUICtrlCreateInput("127.0.0.1",17,38,362,25,-1,$WS_EX_CLIENTEDGE)
 GUICtrlSetFont(-1,11,400,0,"")
 GUICtrlSetResizing(-1,550)
-$portInput = GUICtrlCreateInput("23554",440,80,111,34,-1,$WS_EX_CLIENTEDGE)
+$portInput = GUICtrlCreateInput("23554",408,38,72,25,-1,$WS_EX_CLIENTEDGE)
 GUICtrlSetFont(-1,12,400,0,"")
 GUICtrlSetResizing(-1,804)
-$btnConnect = GUICtrlCreateButton("Connect",572,80,149,38,-1,-1)
+$btnConnect = GUICtrlCreateButton("Connect",511,25,97,38,-1,-1)
 GUICtrlSetOnEvent(-1,"Connect")
 GUICtrlSetFont(-1,12,400,0,"Tahoma")
-GUICtrlSetTip(-1,"Connect to an opened DeoVR player by hostname:port")
+GUICtrlSetTip(-1,"Connect to an opened DeoVR player by hostname:port  Shortcut: Alt-C")
 GUICtrlSetResizing(-1,804)
-$connectStatus = GUICtrlCreateLabel("Ready to connect",60,124,657,36,-1,-1)
+$connectStatus = GUICtrlCreateLabel("Ready to connect",23,78,585,28,-1,-1)
 GUICtrlSetFont(-1,12,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-GUICtrlCreateGroup("Deo Player Status",50,160,829,358,$BS_CENTER,-1)
+GUICtrlCreateGroup("Deo Player Status",17,112,613,307,$BS_CENTER,-1)
 GUICtrlSetFont(-1,12,400,0,"Tahoma")
 GUICtrlSetResizing(-1,550)
-GUICtrlCreateLabel("File Playing",77,211,159,30,-1,-1)
+GUICtrlCreateLabel("File Playing",46,163,74,23,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-$filePlaying = GUICtrlCreateLabel("",250,211,606,30,-1,$WS_EX_STATICEDGE)
+$filePlaying = GUICtrlCreateLabel("",123,163,485,30,-1,$WS_EX_STATICEDGE)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,550)
-GUICtrlCreateLabel("Player State",77,249,147,30,-1,-1)
+GUICtrlCreateLabel("Player State",46,201,76,30,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-$playerState = GUICtrlCreateLabel("",250,249,128,30,-1,$WS_EX_STATICEDGE)
+$playerState = GUICtrlCreateLabel("",123,198,128,25,-1,$WS_EX_STATICEDGE)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-GUICtrlCreateLabel("Speed",419,248,81,29,-1,-1)
+GUICtrlCreateLabel("Speed",280,201,48,18,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-$playingSpeed = GUICtrlCreateLabel("",537,248,123,29,-1,$WS_EX_STATICEDGE)
+$playingSpeed = GUICtrlCreateLabel("",338,197,123,25,-1,$WS_EX_STATICEDGE)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-GUICtrlCreateLabel("Duration",79,285,98,27,-1,-1)
+GUICtrlCreateLabel("Duration",46,237,74,27,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-$videoLength = GUICtrlCreateLabel("",251,285,128,27,-1,$WS_EX_STATICEDGE)
+$videoLength = GUICtrlCreateLabel("",123,231,128,27,-1,$WS_EX_STATICEDGE)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-GUICtrlCreateLabel("Position",418,285,94,29,-1,-1)
+GUICtrlCreateLabel("Position",282,237,49,18,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-$videoPosition = GUICtrlCreateLabel("",537,285,123,29,-1,$WS_EX_STATICEDGE)
+$videoPosition = GUICtrlCreateLabel("",338,234,123,25,-1,$WS_EX_STATICEDGE)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-$btnPause = GUICtrlCreateButton("Pause",708,254,106,58,-1,-1)
+$btnPause = GUICtrlCreateButton("Pause",492,206,106,44,-1,-1)
+GUICtrlSetFont(-1,12,400,0,"Tahoma")
+GUICtrlSetTip(-1,"Play/Pause the DeoVR player. Shortcut: Ctrl-P")
 GUICtrlSetResizing(-1,804)
-GUICtrlCreateLabel("A-B Loop:",98,334,116,30,-1,-1)
+GUICtrlCreateLabel("A-B Loop:",65,286,95,21,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-$LoopA = GUICtrlCreateButton("A",228,334,45,40,-1,-1)
+$LoopA = GUICtrlCreateButton("A",140,276,45,40,-1,-1)
+GUICtrlSetFont(-1,12,400,0,"Tahoma")
 GUICtrlSetTip(-1,"Set Loop A")
 GUICtrlSetResizing(-1,802)
-$LoopB = GUICtrlCreateButton("B",289,334,48,40,-1,-1)
+$LoopB = GUICtrlCreateButton("B",215,276,48,40,-1,-1)
+GUICtrlSetFont(-1,12,400,0,"Tahoma")
 GUICtrlSetTip(-1,"Set Loop B")
 GUICtrlSetResizing(-1,802)
-$LoopClear = GUICtrlCreateButton("Clear",485,334,81,40,-1,-1)
+$LoopClear = GUICtrlCreateButton("Clear",380,276,81,40,-1,-1)
+GUICtrlSetFont(-1,12,400,0,"Tahoma")
 GUICtrlSetTip(-1,"Clear the active item's A B Loop selection.")
 GUICtrlSetResizing(-1,802)
-$loopEnable = GUICtrlCreateCheckbox("Enable",358,344,109,20,-1,-1)
+$loopEnable = GUICtrlCreateCheckbox("Enable",288,296,75,20,-1,-1)
 GUICtrlSetFont(-1,12,400,0,"MS Sans Serif")
 GUICtrlSetTip(-1,"Enable A B Loop playing.")
 GUICtrlSetResizing(-1,802)
-$playSlider = GUICtrlCreateSlider(71,384,795,30,BitOr($TBS_AUTOTICKS,$TBS_ENABLESELRANGE,$TBS_TOOLTIPS),-1)
+$playSlider = GUICtrlCreateSlider(38,326,570,30,BitOr($TBS_AUTOTICKS,$TBS_ENABLESELRANGE,$TBS_TOOLTIPS),-1)
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,550)
-$jumpBack = GUICtrlCreateButton("Back",82,448,136,52,$WS_BORDER,-1)
+$jumpBack = GUICtrlCreateButton("Back",32,359,91,40,$WS_BORDER,-1)
 GUICtrlSetFont(-1,10,400,0,"Tahoma")
-GUICtrlSetTip(-1,"Set the video in DeoVR to jump back N seconds.")
+GUICtrlSetTip(-1,"Set the video in DeoVR to jump back N seconds. Shortcut: Alt-B")
 GUICtrlSetResizing(-1,928)
-$jumpForward = GUICtrlCreateButton("Forward",231,448,130,52,$WS_BORDER,-1)
+$jumpForward = GUICtrlCreateButton("Forward",140,359,82,40,$WS_BORDER,-1)
 GUICtrlSetFont(-1,10,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
-GUICtrlSetTip(-1,"Set the video in DeoVR to jump forward N seconds.")
+GUICtrlSetTip(-1,"Set the video in DeoVR to jump forward N seconds. Shortcut: Alt-F")
 GUICtrlSetResizing(-1,928)
-GUICtrlCreateLabel("Jump Secs",393,438,129,29,-1,-1)
+GUICtrlCreateLabel("Jump Secs",251,373,77,18,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,928)
-$jumpSec = GUICtrlCreateInput("30",430,469,58,32,-1,$WS_EX_CLIENTEDGE)
+$jumpSec = GUICtrlCreateInput("30",328,367,35,24,-1,$WS_EX_CLIENTEDGE)
 GUICtrlSetFont(-1,10,400,0,"Tahoma")
 GUICtrlSetResizing(-1,928)
-$playPrevious = GUICtrlCreateButton("Prev",557,448,140,52,$WS_BORDER,-1)
-GUICtrlSetFont(-1,10,400,0,"Tahoma")
-GUICtrlSetBkColor(-1,"-2")
-GUICtrlSetTip(-1,"Play the previous file/path in the play list.")
-GUICtrlSetResizing(-1,928)
-$playNext = GUICtrlCreateButton("Next",719,448,127,52,$WS_BORDER,-1)
+$playPrevious = GUICtrlCreateButton("Prev",388,359,77,40,$WS_BORDER,-1)
 GUICtrlSetFont(-1,10,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
-GUICtrlSetTip(-1,"Play the next video file/path in the list.")
+GUICtrlSetTip(-1,"Play the previous file/path in the play list. Shortcut: Alt-P")
 GUICtrlSetResizing(-1,928)
-GUICtrlCreateLabel("Drop a web link here.",150,531,248,27,-1,-1)
+$playNext = GUICtrlCreateButton("Next",516,359,74,40,$WS_BORDER,-1)
+GUICtrlSetFont(-1,10,400,0,"Tahoma")
+GUICtrlSetBkColor(-1,"-2")
+GUICtrlSetTip(-1,"Play the next video file/path in the list. Shortcut: Alt-N")
+GUICtrlSetResizing(-1,928)
+GUICtrlCreateLabel("Drag and Drop an URL link here:",23,429,140,40,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-$linkInput = _GUICtrlRichEdit_Create($MainForm,"",160,571,229,49,-1,-1)
+$linkInput = _GUICtrlRichEdit_Create($MainForm,"",170,431,455,38,-1,-1)
 GUICtrlSetState(-1,BitOr($GUI_SHOW,$GUI_ENABLE,$GUI_DROPACCEPTED))
-GUICtrlSetFont(-1,11,400,0,"Tahoma")
-GUICtrlSetResizing(-1,34)
-$playLink = GUICtrlCreateButton("Play",422,537,185,39,-1,-1)
+GUICtrlSetFont(-1,10,400,0,"Tahoma")
+GUICtrlSetResizing(-1,802)
+$playLink = GUICtrlCreateButton("Play",193,477,113,30,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetTip(-1,"Play this link in DeoVR immediately.")
 GUICtrlSetResizing(-1,802)
-$addLinkToQueue = GUICtrlCreateButton("Add To List",422,586,185,40,-1,-1)
+$addLinkToQueue = GUICtrlCreateButton("Add To List",333,476,113,31,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Tahoma")
 GUICtrlSetTip(-1,"Add this link to the play list.")
 GUICtrlSetResizing(-1,802)
-GUICtrlCreateLabel("You can drag and drop files below.",87,651,416,32,-1,-1)
-GUICtrlSetFont(-1,11,400,0,"Tahoma")
+GUICtrlCreateLabel("Play List",23,502,74,19,-1,-1)
+GUICtrlSetFont(-1,12,400,0,"Tahoma")
 GUICtrlSetBkColor(-1,"-2")
 GUICtrlSetResizing(-1,802)
-$iList = GUICtrlCreatelistview("Hidden|Title|Status|Length|A|B",60,688,818,252,$LVS_SINGLESEL,BitOr($LVS_EX_FULLROWSELECT,$WS_EX_CLIENTEDGE,$WS_EX_ACCEPTFILES))
+$iList = GUICtrlCreatelistview("Hidden|Title|Status|Length|A|B",21,531,604,252,$LVS_SINGLESEL,BitOr($LVS_EX_FULLROWSELECT,$WS_EX_CLIENTEDGE,$WS_EX_ACCEPTFILES))
 GUICtrlSetState(-1,BitOr($GUI_SHOW,$GUI_ENABLE,$GUI_DROPACCEPTED))
 GUICtrlSetFont(-1,10,400,0,"MS Sans Serif")
 GUICtrlSetResizing(-1,102)
 _GUICtrlListView_HideColumn($iList, 0)
-_GUICtrlListView_SetColumnWidth($iList, 1, 500)
-_GUICtrlListView_SetColumnWidth($iList, 2, 100)
-_GUICtrlListView_SetColumnWidth($iList, 3, 100)
-_GUICtrlListView_SetColumn($iList, 4, "A", 100, 2)
-_GUICtrlListView_SetColumn($iList, 5, "B", 100, 2)
-$btnDelete = GUICtrlCreateButton("Delete",60,950,132,40,-1,-1)
+_GUICtrlListView_SetColumnWidth($iList, 1, 350)
+_GUICtrlListView_SetColumnWidth($iList, 2, 70)
+_GUICtrlListView_SetColumnWidth($iList, 3, 70)
+_GUICtrlListView_SetColumn($iList, 4, "A", 50, 2)
+_GUICtrlListView_SetColumn($iList, 5, "B", 50, 2)
+$btnDelete = GUICtrlCreateButton("Delete",17,797,104,28,-1,-1)
+GUICtrlSetFont(-1,12,400,0,"Tahoma")
 GUICtrlSetTip(-1,"Delete the highlighted item in the list.")
 GUICtrlSetResizing(-1,834)
-$chkPlayFromBeginning = GUICtrlCreateCheckbox("Play from the beginning.",215,957,301,27,-1,-1)
+$chkPlayFromBeginning = GUICtrlCreateCheckbox("Play from the beginning.",163,797,169,28,-1,-1)
 GUICtrlSetFont(-1,10,400,0,"MS Sans Serif")
 GUICtrlSetTip(-1,"Play the video file/path from the beginning.")
 GUICtrlSetResizing(-1,834)
-$btnSaveList = GUICtrlCreateButton("Save List",543,950,126,41,-1,-1)
+$btnSaveList = GUICtrlCreateButton("Save List",380,790,100,30,-1,-1)
+GUICtrlSetFont(-1,12,400,0,"Tahoma")
 GUICtrlSetTip(-1,"Save the play list to a M3U file.")
 GUICtrlSetResizing(-1,836)
-$btnLoadList = GUICtrlCreateButton("Load List",680,950,125,41,-1,-1)
+$btnLoadList = GUICtrlCreateButton("Load List",517,790,99,30,-1,-1)
+GUICtrlSetFont(-1,12,400,0,"Tahoma")
 GUICtrlSetTip(-1,"Load the play list from a M3U file.")
 GUICtrlSetResizing(-1,836)
 
@@ -178,8 +186,8 @@ GUICtrlSetResizing(-1,836)
 Handle_deklaration=default
 Handle_deklaration_const=false
 title=DeoVR Remote
-breite=933
-hoehe=1059
+breite=654
+hoehe=852
 style=$WS_SIZEBOX+$WS_SYSMENU+$WS_MINIMIZEBOX
 exstyle=$WS_EX_ACCEPTFILES
 bgcolour=0xF0F0F0
@@ -187,7 +195,7 @@ bgimage=none
 handle=$MainForm
 parent=
 code=
-codebeforegui=#include <ColorConstants.au3>[BREAK]If Not (@Compiled ) Then DllCall("User32.dll","bool","SetProcessDPIAware")
+codebeforegui=#include <ColorConstants.au3>[BREAK]; If Not (@Compiled ) Then DllCall("User32.dll","bool","SetProcessDPIAware")
 xpos=-1
 ypos=-1
 center_gui=false
@@ -210,15 +218,15 @@ gui_event_resized=
 gui_event_dropped=
 defaultfont=MS Sans Serif
 defaultfontsize=8
-[0x00081F20]
+[0x004003E6]
 type=label
 handle=432
 locked=0
 resize=802
-x=77
-y=211
-width=159
-height=30
+x=46
+y=163
+width=74
+height=23
 func=
 font=Tahoma
 fontsize=11
@@ -239,14 +247,14 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F22]
+[0x003203E8]
 type=label
 handle=433
 locked=0
 resize=802
-x=77
-y=249
-width=147
+x=46
+y=201
+width=76
 height=30
 func=
 font=Tahoma
@@ -268,15 +276,15 @@ iconindex=
 iconlarge=0
 textmode=text
 order=9
-[0x00011F24]
+[0x00300346]
 type=label
 handle=434
 locked=0
 resize=802
-x=418
-y=285
-width=94
-height=29
+x=282
+y=237
+width=49
+height=18
 func=
 font=Tahoma
 fontsize=11
@@ -297,14 +305,14 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F26]
+[0x00C403A2]
 type=label
 handle=435
 locked=0
 resize=802
-x=79
-y=285
-width=98
+x=46
+y=237
+width=74
 height=27
 func=
 font=Tahoma
@@ -326,14 +334,14 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F28]
+[0x0053087C]
 type=label
 handle=436
 locked=0
 resize=550
-x=250
-y=211
-width=606
+x=123
+y=163
+width=485
 height=30
 func=
 font=Tahoma
@@ -355,15 +363,15 @@ iconindex=
 iconlarge=0
 textmode=text
 order=8
-[0x00011F2A]
+[0x000725CE]
 type=label
 handle=437
 locked=0
 resize=802
-x=250
-y=249
+x=123
+y=198
 width=128
-height=30
+height=25
 func=
 font=Tahoma
 fontsize=11
@@ -384,15 +392,15 @@ iconindex=
 iconlarge=0
 textmode=text
 order=10
-[0x00011F2C]
+[0x000625D6]
 type=label
 handle=438
 locked=0
 resize=802
-x=537
-y=285
+x=338
+y=234
 width=123
-height=29
+height=25
 func=
 font=Tahoma
 fontsize=11
@@ -413,13 +421,13 @@ iconindex=
 iconlarge=0
 textmode=text
 order=16
-[0x00011F2E]
+[0x001F1CEC]
 type=label
 handle=439
 locked=0
 resize=802
-x=251
-y=285
+x=123
+y=231
 width=128
 height=27
 func=
@@ -442,15 +450,15 @@ iconindex=
 iconlarge=0
 textmode=text
 order=14
-[0x00011F30]
+[0x00191D18]
 type=label
 handle=440
 locked=0
 resize=802
-x=60
-y=40
-width=197
-height=27
+x=21
+y=16
+width=99
+height=17
 func=
 font=Tahoma
 fontsize=11
@@ -471,15 +479,15 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F32]
+[0x0051066A]
 type=input
 handle=441
 locked=0
 resize=550
-x=60
-y=80
+x=17
+y=38
 width=362
-height=34
+height=25
 func=
 font=
 fontsize=11
@@ -500,15 +508,15 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F34]
+[0x003E246C]
 type=label
 handle=442
 locked=0
 resize=804
-x=443
-y=43
+x=410
+y=20
 width=51
-height=27
+height=16
 func=
 font=Tahoma
 fontsize=11
@@ -529,15 +537,15 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F36]
+[0x00241F4E]
 type=input
 handle=443
 locked=0
 resize=804
-x=440
-y=80
-width=111
-height=34
+x=408
+y=38
+width=72
+height=25
 func=
 font=
 fontsize=12
@@ -558,21 +566,21 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F38]
+[0x000D238C]
 type=button
 handle=444
 locked=0
 resize=804
-x=572
-y=80
-width=149
+x=511
+y=25
+width=97
 height=38
 func=Connect
 font=Tahoma
 fontsize=12
 fontstyle=400
 fontattribute=0
-tooltip=Connect to an opened DeoVR player by hostname:port
+tooltip=Connect to an opened DeoVR player by hostname:port  Shortcut: Alt-C
 bgimage=
 textcolour=0x000000
 id=$btnConnect
@@ -587,15 +595,15 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F3A]
+[0x00490792]
 type=label
 handle=445
 locked=0
 resize=802
-x=60
-y=124
-width=657
-height=36
+x=23
+y=78
+width=585
+height=28
 func=
 font=Tahoma
 fontsize=12
@@ -616,15 +624,15 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F3C]
+[0x00122394]
 type=group
 handle=446
 locked=0
 resize=550
-x=50
-y=160
-width=829
-height=358
+x=17
+y=112
+width=613
+height=307
 func=
 font=Tahoma
 fontsize=12
@@ -645,15 +653,15 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F3E]
+[0x000A2392]
 type=label
 handle=447
 locked=0
 resize=802
-x=419
-y=248
-width=81
-height=29
+x=280
+y=201
+width=48
+height=18
 func=
 font=Tahoma
 fontsize=11
@@ -674,15 +682,15 @@ iconindex=
 iconlarge=0
 textmode=text
 order=11
-[0x00011F40]
+[0x00092396]
 type=label
 handle=448
 locked=0
 resize=802
-x=537
-y=248
+x=338
+y=197
 width=123
-height=29
+height=25
 func=
 font=Tahoma
 fontsize=11
@@ -703,18 +711,18 @@ iconindex=
 iconlarge=0
 textmode=text
 order=12
-[0x00011F42]
+[0x000A2398]
 type=richedit
 handle=449
 locked=0
-resize=34
-x=160
-y=571
-width=229
-height=49
+resize=802
+x=170
+y=431
+width=455
+height=38
 func=
 font=Tahoma
-fontsize=11
+fontsize=10
 fontstyle=400
 fontattribute=0
 tooltip=
@@ -732,15 +740,15 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F44]
+[0x000B239A]
 type=button
 handle=450
 locked=0
 resize=802
-x=422
-y=537
-width=185
-height=39
+x=193
+y=477
+width=113
+height=30
 func=
 font=Tahoma
 fontsize=11
@@ -761,15 +769,15 @@ iconindex=
 iconlarge=0
 textmode=text
 order=32
-[0x00011F46]
+[0x002620AA]
 type=label
 handle=451
 locked=0
 resize=802
-x=150
-y=531
-width=248
-height=27
+x=23
+y=429
+width=140
+height=40
 func=
 font=Tahoma
 fontsize=11
@@ -779,7 +787,7 @@ tooltip=
 bgimage=
 textcolour=0x000000
 id=
-text=Drop a web link here.
+text=Drag and Drop an URL link here:
 state=$GUI_SHOW+$GUI_ENABLE
 style=
 exstyle=
@@ -790,15 +798,15 @@ iconindex=
 iconlarge=0
 textmode=text
 order=30
-[0x00011F48]
+[0x022D22AE]
 type=button
 handle=452
 locked=0
 resize=802
-x=422
-y=586
-width=185
-height=40
+x=333
+y=476
+width=113
+height=31
 func=
 font=Tahoma
 fontsize=11
@@ -819,18 +827,18 @@ iconindex=
 iconlarge=0
 textmode=text
 order=33
-[0x00011F4A]
+[0x004F22E0]
 type=button
 handle=453
 locked=0
 resize=836
-x=543
-y=950
-width=126
-height=41
+x=380
+y=790
+width=100
+height=30
 func=
-font=MS Sans Serif
-fontsize=8
+font=Tahoma
+fontsize=12
 fontstyle=400
 fontattribute=0
 tooltip=Save the play list to a M3U file.
@@ -848,18 +856,18 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F4C]
+[0x001822AA]
 type=button
 handle=454
 locked=0
 resize=836
-x=680
-y=950
-width=125
-height=41
+x=517
+y=790
+width=99
+height=30
 func=
-font=MS Sans Serif
-fontsize=8
+font=Tahoma
+fontsize=12
 fontstyle=400
 fontattribute=0
 tooltip=Load the play list from a M3U file.
@@ -877,21 +885,21 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F4E]
+[0x004820C4]
 type=button
 handle=455
 locked=0
 resize=928
-x=82
-y=448
-width=136
-height=52
+x=32
+y=359
+width=91
+height=40
 func=
 font=Tahoma
 fontsize=10
 fontstyle=400
 fontattribute=0
-tooltip=Set the video in DeoVR to jump back N seconds.
+tooltip=Set the video in DeoVR to jump back N seconds. Shortcut: Alt-B
 bgimage=
 textcolour=0x000000
 id=$jumpBack
@@ -906,21 +914,21 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F50]
+[0x001222D2]
 type=button
 handle=456
 locked=0
 resize=928
-x=231
-y=448
-width=130
-height=52
+x=140
+y=359
+width=82
+height=40
 func=
 font=Tahoma
 fontsize=10
 fontstyle=400
 fontattribute=0
-tooltip=Set the video in DeoVR to jump forward N seconds.
+tooltip=Set the video in DeoVR to jump forward N seconds. Shortcut: Alt-F
 bgimage=
 textcolour=0x000000
 id=$jumpForward
@@ -935,15 +943,15 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F52]
+[0x002422C6]
 type=label
 handle=457
 locked=0
 resize=928
-x=393
-y=438
-width=129
-height=29
+x=251
+y=373
+width=77
+height=18
 func=
 font=Tahoma
 fontsize=11
@@ -964,15 +972,15 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F54]
+[0x004220B8]
 type=input
 handle=458
 locked=0
 resize=928
-x=430
-y=469
-width=58
-height=32
+x=328
+y=367
+width=35
+height=24
 func=
 font=Tahoma
 fontsize=10
@@ -993,21 +1001,21 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F56]
+[0x00B20B20]
 type=button
 handle=459
 locked=0
 resize=928
-x=557
-y=448
-width=140
-height=52
+x=388
+y=359
+width=77
+height=40
 func=
 font=Tahoma
 fontsize=10
 fontstyle=400
 fontattribute=0
-tooltip=Play the previous file/path in the play list.
+tooltip=Play the previous file/path in the play list. Shortcut: Alt-P
 bgimage=
 textcolour=0x000000
 id=$playPrevious
@@ -1022,21 +1030,21 @@ iconindex=
 iconlarge=0
 textmode=text
 order=28
-[0x00011F58]
+[0x00690B06]
 type=button
 handle=460
 locked=0
 resize=928
-x=719
-y=448
-width=127
-height=52
+x=516
+y=359
+width=74
+height=40
 func=
 font=Tahoma
 fontsize=10
 fontstyle=400
 fontattribute=0
-tooltip=Play the next video file/path in the list.
+tooltip=Play the next video file/path in the list. Shortcut: Alt-N
 bgimage=
 textcolour=0x000000
 id=$playNext
@@ -1051,18 +1059,18 @@ iconindex=
 iconlarge=0
 textmode=text
 order=29
-[0x00011F5A]
+[0x00D30AAC]
 type=button
 handle=461
 locked=0
 resize=834
-x=60
-y=950
-width=132
-height=40
+x=17
+y=797
+width=104
+height=28
 func=
-font=MS Sans Serif
-fontsize=8
+font=Tahoma
+fontsize=12
 fontstyle=400
 fontattribute=0
 tooltip=Delete the highlighted item in the list.
@@ -1080,15 +1088,15 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F5C]
+[0x07120A7E]
 type=checkbox
 handle=462
 locked=0
 resize=834
-x=215
-y=957
-width=301
-height=27
+x=163
+y=797
+width=169
+height=28
 func=
 font=MS Sans Serif
 fontsize=10
@@ -1109,21 +1117,21 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F5E]
+[0x02280A2E]
 type=button
 handle=463
 locked=0
 resize=804
-x=708
-y=254
+x=492
+y=206
 width=106
-height=58
+height=44
 func=
-font=MS Sans Serif
-fontsize=8
+font=Tahoma
+fontsize=12
 fontstyle=400
 fontattribute=0
-tooltip=
+tooltip=Play/Pause the DeoVR player. Shortcut: Ctrl-P
 bgimage=
 textcolour=0x000000
 id=$btnPause
@@ -1138,14 +1146,14 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F60]
+[0x041E09B2]
 type=slider
 handle=464
 locked=0
 resize=550
-x=71
-y=384
-width=795
+x=38
+y=326
+width=570
 height=30
 func=
 font=MS Sans Serif
@@ -1167,18 +1175,18 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F64]
+[0x016808FE]
 type=button
 handle=465
 locked=0
 resize=802
-x=228
-y=334
+x=140
+y=276
 width=45
 height=40
 func=
-font=MS Sans Serif
-fontsize=8
+font=Tahoma
+fontsize=12
 fontstyle=400
 fontattribute=0
 tooltip=Set Loop A
@@ -1196,18 +1204,18 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F66]
+[0x037A0936]
 type=button
 handle=466
 locked=0
 resize=802
-x=289
-y=334
+x=215
+y=276
 width=48
 height=40
 func=
-font=MS Sans Serif
-fontsize=8
+font=Tahoma
+fontsize=12
 fontstyle=400
 fontattribute=0
 tooltip=Set Loop B
@@ -1225,18 +1233,18 @@ iconindex=
 iconlarge=0
 textmode=text
 order=20
-[0x00011F68]
+[0x0096095A]
 type=button
 handle=467
 locked=0
 resize=802
-x=485
-y=334
+x=380
+y=276
 width=81
 height=40
 func=
-font=MS Sans Serif
-fontsize=8
+font=Tahoma
+fontsize=12
 fontstyle=400
 fontattribute=0
 tooltip=Clear the active item's A B Loop selection.
@@ -1254,15 +1262,15 @@ iconindex=
 iconlarge=0
 textmode=text
 order=21
-[0x00011F6A]
+[0x00CA08FC]
 type=label
 handle=468
 locked=0
 resize=802
-x=98
-y=334
-width=116
-height=30
+x=65
+y=286
+width=95
+height=21
 func=
 font=Tahoma
 fontsize=11
@@ -1283,14 +1291,14 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F6C]
+[0x011208EC]
 type=listview
 handle=469
 locked=0
 resize=102
-x=60
-y=688
-width=818
+x=21
+y=531
+width=604
 height=252
 func=
 font=MS Sans Serif
@@ -1306,20 +1314,20 @@ state=$GUI_SHOW+$GUI_ENABLE+$GUI_DROPACCEPTED
 style=$LVS_SINGLESEL
 exstyle=$LVS_EX_FULLROWSELECT+$WS_EX_CLIENTEDGE+$WS_EX_ACCEPTFILES
 bgcolour=
-code=_GUICtrlListView_HideColumn($iList, 0)[BREAK]_GUICtrlListView_SetColumnWidth($iList, 1, 500)[BREAK]_GUICtrlListView_SetColumnWidth($iList, 2, 100)[BREAK]_GUICtrlListView_SetColumnWidth($iList, 3, 100)[BREAK]_GUICtrlListView_SetColumn($iList, 4, "A", 100, 2)[BREAK]_GUICtrlListView_SetColumn($iList, 5, "B", 100, 2)
+code=_GUICtrlListView_HideColumn($iList, 0)[BREAK]_GUICtrlListView_SetColumnWidth($iList, 1, 350)[BREAK]_GUICtrlListView_SetColumnWidth($iList, 2, 70)[BREAK]_GUICtrlListView_SetColumnWidth($iList, 3, 70)[BREAK]_GUICtrlListView_SetColumn($iList, 4, "A", 50, 2)[BREAK]_GUICtrlListView_SetColumn($iList, 5, "B", 50, 2)
 order=35
 tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00021F72]
+[0x001C21E0]
 type=checkbox
 handle=470
 locked=0
 resize=802
-x=358
-y=344
-width=109
+x=288
+y=296
+width=75
 height=20
 func=
 font=MS Sans Serif
@@ -1341,25 +1349,25 @@ tabpage=-1
 iconindex=
 iconlarge=0
 textmode=text
-[0x00011F74]
+[0x00680CCC]
 type=label
 handle=471
 locked=0
 resize=802
-x=87
-y=651
-width=416
-height=32
+x=23
+y=502
+width=74
+height=19
 func=
 font=Tahoma
-fontsize=11
+fontsize=12
 fontstyle=400
 fontattribute=0
 tooltip=
 bgimage=
 textcolour=0x000000
 id=
-text=You can drag and drop files below.
+text=Play List
 state=$GUI_SHOW+$GUI_ENABLE
 style=
 exstyle=
