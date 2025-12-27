@@ -1,0 +1,17 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "au3",
+            "request": "launch",
+            "name": "Run AutoIt3 script",
+            "script": "${file}",
+            "cwd": "${fileDirname}",
+            "executable": "${config:autoit3.installDir}/AutoIt3.exe",
+            "arguments": []
+        }
+    ]
+}

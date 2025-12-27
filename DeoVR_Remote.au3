@@ -6,7 +6,7 @@
 Opt("WinTitleMatchMode", 3) ; Exact title match mode.
 
 ; #include <ColorConstants.au3>
-#include <json.au3>
+#include "json.au3"
 #include <Array.au3>
 #include <GuiSlider.au3>
 #include "Forms\MainForm.isf"
@@ -21,7 +21,7 @@ Opt("WinTitleMatchMode", 3) ; Exact title match mode.
 TCPStartup() ; Start the tcp service
 
 OnAutoItExitRegister("OnAutoItExit") ; This doesn't work in event mode.
-; GUISetOnEvent($GUI_EVENT_CLOSE, "OnAutoItExit")
+; GUISetOnEvent($GUI_EVENT_CLOSE, "OnAutoItExit") ; for event mode
 
 Global $bConnected = False , $iSocket = 0
 Global $hTimer = TimerInit(), $iCheckDataInterval = 300  ;  Check the data every 300 ms
@@ -176,11 +176,9 @@ While True
 				ResetData()
 			EndIf
 		EndIf ; ==> Do things every second
-		; Check to see if Deo VR still running.
-		$hDeoVR = WinGetHandle("Deo VR", "")
-		If @error Then
-			Disconnect()
-		EndIf
+		; Check to see if Deo VR still running. Only works for local playback.
+		;$hDeoVR = WinGetHandle("Deo VR", "")
+		;If @error Then Disconnect()
 
 	Else ; ==> If not connected.
 		; Do things every 3 seconds while disconnetec.
